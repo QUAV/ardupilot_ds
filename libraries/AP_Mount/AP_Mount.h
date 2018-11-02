@@ -28,7 +28,6 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <DataFlash/DataFlash.h>
 
-
 // maximum number of mounts
 #define AP_MOUNT_MAX_INSTANCES          1
 
@@ -77,8 +76,8 @@ public:
         Mount_Type_SoloGimbal = 2,      /// Solo's gimbal
         Mount_Type_Alexmos = 3,         /// Alexmos mount
         Mount_Type_SToRM32 = 4,         /// SToRM32 mount using MAVLink protocol
-        Mount_Type_SToRM32_serial = 5,   /// SToRM32 mount using custom serial protocol
-        Mount_Type_Visca = 6
+        Mount_Type_SToRM32_serial = 5,  /// SToRM32 mount using custom serial protocol
+        Mount_Type_Visca = 6            /// Zoom camera using Visca protocol
     };
 
     // init - detect and initialise all mounts
