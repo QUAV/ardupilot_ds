@@ -271,6 +271,11 @@ void AP_SerialManager::init()
                     state[i].uart->begin(map_baudrate(state[i].baud), 30, 30);
                     state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
                     break;
+
+                case SerialProtocol_Serialbatt:
+                    // Serial protocol for battery monitor on QH
+                    state[i].uart->begin(map_baudrate(state[i].baud), 128, 128);
+                    break;
             }
         }
     }
