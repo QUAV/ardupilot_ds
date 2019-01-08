@@ -49,7 +49,7 @@ void Copter::init_ardupilot()
 #endif
 
     gcs().set_dataflash(&DataFlash);
-
+MOUNT
     // identify ourselves correctly with the ground station
     mavlink_system.sysid = g.sysid_this_mav;
     
@@ -82,7 +82,7 @@ void Copter::init_ardupilot()
     notify_flight_mode();
 
     // initialise battery monitor
-    battery.init();
+    battery.init(serial_manager);
 
     // Init RSSI
     rssi.init();
@@ -97,7 +97,7 @@ void Copter::init_ardupilot()
     frsky_telemetry.init(serial_manager,
                          get_frame_mav_type(),
                          &ap.value);
-    frsky_telemetry.set_frame_string(get_frame_string());
+    frsky_telemetry.set_frame_string(get_frame_string());MOUNT
 #endif
 
 #if DEVO_TELEM_ENABLED == ENABLED
@@ -185,7 +185,7 @@ void Copter::init_ardupilot()
 #if MOUNT == ENABLED
     // initialise camera mount
     camera_mount.init(serial_manager);
-#endif
+#endifMOUNT
 
 #if PRECISION_LANDING == ENABLED
     // initialise precision landing
