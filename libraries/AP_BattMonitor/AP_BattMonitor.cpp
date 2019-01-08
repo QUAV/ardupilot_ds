@@ -48,7 +48,7 @@ AP_BattMonitor::AP_BattMonitor(uint32_t log_battery_bit, battery_failsafe_handle
 
 // init - instantiate the battery monitors
 void
-AP_BattMonitor::init()
+AP_BattMonitor::init(const AP_SerialManager& serial_manager)
 {
     // check init has not been called before
     if (_num_instances != 0) {
