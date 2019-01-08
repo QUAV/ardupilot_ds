@@ -56,7 +56,8 @@ ArduCopter/fence.txt
 ArduCopter/ral.txt
 ArduCopter/test.ArduCopter/
 ArduCopter/test/*
-ArduCopter/way.txt
+ArduCopter/way.txt    git push --set-upstream origin QH
+
 ArduPlane/test.ArduPlane/
 ArduPlane/test/*
 ArduPlane/way.txt
@@ -74,7 +75,9 @@ autotest.lck
 build
 cmake_install.cmake
 config.mk
-cscope.in.out
+cscope.in.out    git push --set-upstream origin QH
+    git push --set-upstream origin QH
+
 cscope.out
 cscope.po.out
 dataflash.bin
@@ -97,3 +100,5 @@ GTAGS
 config.mk
 *.apj
 .gdbinit
+*.vscode
+
