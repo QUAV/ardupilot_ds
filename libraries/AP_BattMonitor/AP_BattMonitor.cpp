@@ -109,7 +109,6 @@ AP_BattMonitor::init(const AP_SerialManager& serial_manager)
             case AP_BattMonitor_Params::BattMonitor_TYPE_SerialBatt:
                 drivers[instance] = new AP_BattMonitor_Serialbatt(*this, state[instance], _params[instance]);
                 _num_instances++;
-                // TODO, check initialization.
                 break;
 
             case AP_BattMonitor_Params::BattMonitor_TYPE_NONE:
@@ -274,9 +273,12 @@ float AP_BattMonitor::voltage_resting_estimate(uint8_t instance) const
 }
 
 /// current_amps - returns the instantaneous current draw in amperes
-float AP_BattMonitor::current_amps(uint8_t instance) const {
+float AP_BattMonitor::current_amps(uint8_t instance) const 
+{
     if (instance < _num_instances) {
         return state[instance].current_amps;
+    } else if ( _params[instance].type() == AP_BattMonitor_Params::BattMonitor_TYPE_SerialBatt ) {
+        return state[instance].generator_amps;
     } else {
         return 0.0f;
     }
