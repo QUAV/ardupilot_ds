@@ -3,6 +3,7 @@
 #include "AP_BattMonitor_SMBus.h"
 #include "AP_BattMonitor_Bebop.h"
 #include "AP_BattMonitor_BLHeliESC.h"
+#include "AP_BattMonitor_Serialbatt.h"
 #if HAL_WITH_UAVCAN
 #include "AP_BattMonitor_UAVCAN.h"
 #endif
@@ -105,14 +106,24 @@ AP_BattMonitor::init(const AP_SerialManager& serial_manager)
                 _num_instances++;
 #endif
                 break;
+            case AP_BattMonitor_Params::BattMonitor_TYPE_SerialBatt:
+                drivers[instance] = new AP_BattMonitor_Serialbatt(*this, state[instance], _params[instance]);
+                _num_instances++;
+                // TODO, check initialization.
+                break;
+
             case AP_BattMonitor_Params::BattMonitor_TYPE_NONE:
             default:
                 break;
         }
 
-        // call init function for each backend
+        // call init function for each backend. If Serial batt, overloaded init with serial_manager argument needed.
         if (drivers[instance] != nullptr) {
-            drivers[instance]->init();
+            if (get_type(instance) == AP_BattMonitor_Params::BattMonitor_TYPE_SerialBatt){
+                drivers[instance]->init(serial_manager);
+            } else {
+                drivers[instance]->init();
+            }
         }
     }
 }
