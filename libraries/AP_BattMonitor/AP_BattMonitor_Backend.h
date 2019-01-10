@@ -30,6 +30,7 @@ public:
 
     // initialise
     virtual void init() = 0;
+    virtual void init(const AP_SerialManager& serial_manager) {}
 
     // read the latest battery voltage
     virtual void read() = 0;
