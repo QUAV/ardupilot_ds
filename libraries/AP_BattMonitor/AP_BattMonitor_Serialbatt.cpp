@@ -57,7 +57,6 @@ void AP_BattMonitor_Serialbatt::read()
 
         // record time
         _state.last_time_micros = tnow;
-    }
 }
 
 
