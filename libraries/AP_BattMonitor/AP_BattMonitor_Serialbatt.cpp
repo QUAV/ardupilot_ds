@@ -48,6 +48,9 @@ void AP_BattMonitor_Serialbatt::read()
     // Read current from buffer
     _state.current_amps = _buffer.Batt_data.Amps_Batt;
 
+    // workaround for getting generator amps in just one instance
+    _state.generator_amps = _buffer.Batt_data.Amps_Gen;
+
     if (_state.last_time_micros != 0 && dt < 2000000.0f) {
             // .0002778 is 1/3600 (conversion to hours)
             float mah = _state.current_amps * dt * 0.0000002778f;
