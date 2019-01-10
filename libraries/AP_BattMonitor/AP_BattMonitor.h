@@ -80,6 +80,7 @@ public:
         float       resistance;                // resistance, in Ohms, calculated by comparing resting voltage vs in flight voltage
         BatteryFailsafe failsafe;              // stage failsafe the battery is in
         bool        healthy;                   // battery monitor is communicating correctly
+        float       generator_amps;            // Amps used for second current on Serialbatt
     };
 
     // Return the number of battery monitor instances
