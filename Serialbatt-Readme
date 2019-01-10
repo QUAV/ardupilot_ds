@@ -1,0 +1,21 @@
+-------------- SerialBatt branch Readme -------------------
+
+// TODO
+
+-AP_SerialManager currently supports a public method for retrieving the singleton instance. 
+It would be nice to do it that way. Right now is the old way, delivering serial_manager to the argument on init()
+
+-Probably there will be needed some tweaks on the serialmanager regarding baud rate. Remember
+
+
+// Changes
+
+-Arducopter/system.cpp: put serial_manager on the argument of battery.init()
+-AP_SerialManager: add support for Serialbatt protocols
+-AP_BattMonitor: modify init() for serialmanager on argument
+
+// Setup
+
+-Select on serial protocol option 19 on desired serial port (type of serial protocol)
+-Default baud rate is not set
+-Select monitor param, under batt monitor params, option 10 (type of battery monitor)
