@@ -72,6 +72,10 @@
 #define AP_SERIALMANAGER_SBUS1_BAUD           100000
 #define AP_SERIALMANAGER_SBUS1_BUFSIZE_RX     16
 #define AP_SERIALMANAGER_SBUS1_BUFSIZE_TX     32
+    
+#define AP_SERIALMANAGER_QHPAYLOAD_BAUD         115200
+#define AP_SERIALMANAGER_QHPAYLOAD_RX           256
+#define AP_SERIALMANAGER_QHPAYLOAD_TX           256
 
 class AP_SerialManager {
 public:
@@ -101,6 +105,7 @@ public:
         SerialProtocol_Sbus1 = 15,
         SerialProtocol_ESCTelemetry = 16,
         SerialProtocol_Devo_Telem = 17,
+        SerialProtocol_QHPayload = 18,
     };
 
     // get singleton instance

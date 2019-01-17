@@ -271,6 +271,14 @@ void AP_SerialManager::init()
                     state[i].uart->begin(map_baudrate(state[i].baud), 30, 30);
                     state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
                     break;
+
+                case SerialProtocol_QHPayload:
+                    // QHPayload protocol. Baudrate hardcoded to 115200
+                    state[i].baud = AP_SERIALMANAGER_QHPAYLOAD_BAUD / 1000;
+                    state[i].uart->begin(AP_SERIALMANAGER_QHPAYLOAD_BAUD,
+                                         AP_SERIALMANAGER_QHPAYLOAD_RX,
+                                         AP_SERIALMANAGER_QHPAYLOAD_TX);
+                    break;
             }
         }
     }
