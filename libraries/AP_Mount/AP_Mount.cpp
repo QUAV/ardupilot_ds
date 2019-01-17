@@ -7,6 +7,7 @@
 #include "AP_Mount_Alexmos.h"
 #include "AP_Mount_SToRM32.h"
 #include "AP_Mount_SToRM32_serial.h"
+#include "AP_Mount_QHPayload.h"
 
 const AP_Param::GroupInfo AP_Mount::var_info[] = {
     // @Param: _DEFLT_MODE
@@ -207,6 +208,18 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
     // 23 formerly _K_RATE
 
     // 24 is AVAILABLE
+
+    AP_GROUPINFO("_Zoom_CH", 20, AP_Mount, state[0]._Zoom_ch, 6),
+
+    AP_GROUPINFO("_Video_CH", 21, AP_Mount, state[0]._Video_ch, 7),
+
+    AP_GROUPINFO("_Spd_mn", 22, AP_Mount, state[0]._Speed_min, 8),
+
+    AP_GROUPINFO("_Spd_mx", 23, AP_Mount, state[0]._Speed_max, 50),
+
+
+
+
 
 #if AP_MOUNT_MAX_INSTANCES > 1
     // @Param: 2_DEFLT_MODE
@@ -461,6 +474,11 @@ void AP_Mount::init(const AP_SerialManager& serial_manager)
         // check for SToRM32 mounts using serial protocol
         } else if (mount_type == Mount_Type_SToRM32_serial) {
             _backends[instance] = new AP_Mount_SToRM32_serial(*this, state[instance], instance);
+            _num_instances++;
+
+        // check for QHPayload using serial protocol    
+        } else if (mount_type == Mount_Type_QHPayload) {
+            _backends[instance] = new AP_Mount_QHPayload(*this, state[instance], instance);
             _num_instances++;
         }
 
