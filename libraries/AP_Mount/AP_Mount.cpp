@@ -213,9 +213,17 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
 
     AP_GROUPINFO("_Video_CH", 21, AP_Mount, state[0]._Video_ch, 7),
 
-    AP_GROUPINFO("_Spd_mn", 22, AP_Mount, state[0]._Speed_min, 8),
+    AP_GROUPINFO("_Rec_CH", 22, AP_Mount, state[0]._Rec_ch, 8),
 
-    AP_GROUPINFO("_Spd_mx", 23, AP_Mount, state[0]._Speed_max, 50),
+    AP_GROUPINFO("_Track_CH", 23, AP_Mount, state[0]._Track_ch, 8),
+
+    AP_GROUPINFO("_Spd_mn", 24, AP_Mount, state[0]._Speed_min, 8),
+
+    AP_GROUPINFO("_Spd_mx", 25, AP_Mount, state[0]._Speed_max, 50),
+
+    
+
+    
 
 
 
