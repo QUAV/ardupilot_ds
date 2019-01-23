@@ -37,6 +37,9 @@ void Copter::init_rc_in()
     RC_Channels::rc_channel(CH_6)->set_range(1000);
     RC_Channels::rc_channel(CH_7)->set_range(1000);
     RC_Channels::rc_channel(CH_8)->set_range(1000);
+    RC_Channels::rc_channel(CH_9)->set_range(1000);
+    RC_Channels::rc_channel(CH_10)->set_range(1000);
+
 
     // set default dead zones
     default_dead_zones();
