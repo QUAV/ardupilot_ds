@@ -52,6 +52,13 @@ private:
     // Update angle targets for tracker
     void PL_update_angle_targets();
 
+    // Tracker PID
+    float PL_tracker_PID(float error);
+
+    // Reset Tracker I therm
+    void PL_reset_I();
+
+
     // Serial related methods
     void PL_write_params();
     void PL_send_command(uint8_t* data, uint8_t size);
@@ -68,6 +75,15 @@ private:
         NoTracking = 0,
         Tracking = 1
     };
+
+    struct PID_Info {
+        float desired;
+        float P;
+        float I;
+        float D;
+        float FF;
+        float AFF;
+    } _PID_info;
 
     struct PACKED Type1_msg {
         uint8_t Header_1           = 0x7E;               // 1
@@ -212,6 +228,11 @@ private:
 
     int16_t _Track_X;
     int16_t _Track_Y;
+    
+    uint32_t _last_t;
+    float _integrator;
+    float _last_error;
+    float _last_derivative;
+    float _scaler;
 
-    uint16_t _ticks;
 };

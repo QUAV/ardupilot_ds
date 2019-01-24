@@ -25,6 +25,7 @@ void AP_Mount_QHPayload::update()
     PL_set_zoom();
     PL_rec();
     PL_tracker();
+    PL_update_angle_targets();
     
     AP_Mount_Alexmos::update();
 }
@@ -65,6 +66,8 @@ void AP_Mount_QHPayload::PL_rec()
 void AP_Mount_QHPayload::PL_set_zoom()
 {
     uint16_t rc_value = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
+
+    _scaler = (1000-rc_value)*0.0001f*_state._scl;
 
     // check if rc has changed. If not return, no need to send to much equal commands.
     if ( rc_value < _last_zoom_rc+5 && rc_value > _last_zoom_rc-5 ){
@@ -165,6 +168,114 @@ void AP_Mount_QHPayload::PL_tracker()
 }
 
 
+// Update angle targets for Alexmos to reach
+void AP_Mount_QHPayload::PL_update_angle_targets()
+{
+    // if joystick_speed is defined then pilot input defines a rate of change of the angle
+    if (_frontend._joystick_speed) {
+
+        if ( _track_state == Tracking ){
+            float tilt = PL_tracker_PID(_Track_Y);
+            float pan = PL_tracker_PID(_Track_X);
+
+                _angle_ef_target_rad.y += tilt * 0.0001f * _frontend._joystick_speed;
+                _angle_ef_target_rad.y = constrain_float(_angle_ef_target_rad.y, radians(_state._tilt_angle_min*0.01f), radians(_state._tilt_angle_max*0.01f));
+
+                _angle_ef_target_rad.z += pan * 0.0001f * _frontend._joystick_speed;
+                _angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z, radians(_state._pan_angle_min*0.01f), radians(_state._pan_angle_max*0.01f));
+        }
+    }
+}
+
+
+// Tracker PIDS
+float AP_Mount_QHPayload::PL_tracker_PID(float error)
+{
+    uint32_t tnow = AP_HAL::millis();
+    uint32_t dt = tnow - _last_t;
+    float output = 0;
+    float delta_time;
+
+    if (_last_t == 0 || dt > 1000) {
+        dt = 0;
+
+		// if this PID hasn't been used for a full second then zero
+		// the intergator term. This prevents I buildup from a
+		// previous fight mode from causing a massive return before
+		// the integrator gets a chance to correct itself
+		PL_reset_I();
+    }
+    _last_t = tnow;
+
+    float scaler = _scaler;
+
+    delta_time = (float)dt / 1000.0f;
+
+    // Compute proportional component
+    _PID_info.P = error * _state._kp;
+    output += _PID_info.P;
+
+    // Compute derivative component if time has elapsed
+    if ((fabsf(_state._kd) > 0) && (dt > 0)) {
+        float derivative;
+
+		if (isnan(_last_derivative)) {
+			// we've just done a reset, suppress the first derivative
+			// term as we don't want a sudden change in input to cause
+			// a large D output change			
+			derivative = 0;
+			_last_derivative = 0;
+		} else {
+			derivative = (error - _last_error) / delta_time;
+		}
+
+        // discrete low pass filter, cuts out the
+        // high frequency noise that can drive the controller crazy
+        float RC = 1/(2*M_PI*_state._fCut);
+        derivative = _last_derivative +
+                     ((delta_time / (RC + delta_time)) *
+                      (derivative - _last_derivative));
+
+        // update state
+        _last_error             = error;
+        _last_derivative    = derivative;
+
+        // add in derivative component
+        _PID_info.D = _state._kd * derivative;
+        output                          += _PID_info.D;
+    }
+
+    // scale the P and D components
+    output *= scaler;
+    _PID_info.D *= scaler;
+    _PID_info.P *= scaler;
+
+    // Compute integral component if time has elapsed
+    if ((fabsf(_state._ki) > 0) && (dt > 0)) {
+        _integrator             += (error * _state._ki) * scaler * delta_time;
+        if (_integrator < -_state._imax) {
+            _integrator = -_state._imax;
+        } else if (_integrator > _state._imax) {
+            _integrator = _state._imax;
+        }
+        _PID_info.I = _integrator;
+        output += _integrator;
+    }
+
+    return output;
+}
+
+
+// reset tracker I therm
+void AP_Mount_QHPayload::PL_reset_I()
+{
+    _integrator = 0;
+	// we use NAN (Not A Number) to indicate that the last 
+	// derivative value is not valid
+    _last_derivative = NAN;
+    _PID_info.I = 0;
+}
+
 // Send command to QHPayload API
 void AP_Mount_QHPayload::PL_send_command(uint8_t* data, uint8_t size)
 {
@@ -180,9 +291,6 @@ void AP_Mount_QHPayload::PL_parse_body()
 {
     _Track_X = _PL_buffer.msg.X;
     _Track_Y = _PL_buffer.msg.Y;
-
-    // DEBUG
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "X: %5.3f Y: %5.3f", (double)_Track_X, (double)_Track_Y);
 
     // PARSE STATUS?
 }
