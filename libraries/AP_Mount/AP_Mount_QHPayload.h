@@ -94,7 +94,6 @@ private:
         uint8_t Working_state      = 0x00;               // 6 Image setting mode, SD mode, OSD Mode
         uint8_t ImSett_SD_OSD      = 0x00;               // 7 value of ^^^^
         int16_t X_Mov              = 0x00;               // 8,9 
-
         int16_t Y_Mov              = 0x00;               // 10,11 
         uint8_t Confirm_tracking   = 0x00;               // 12 
         uint8_t Bright_adj         = 0x00;               // 13 
