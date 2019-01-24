@@ -207,8 +207,7 @@ float AP_Mount_QHPayload::PL_tracker_PID(float error)
     }
     _last_t = tnow;
 
-    //float scaler = _scaler;
-    float scaler = 1;
+    float scaler = _state._scl;
 
     delta_time = (float)dt / 1000.0f;
 
