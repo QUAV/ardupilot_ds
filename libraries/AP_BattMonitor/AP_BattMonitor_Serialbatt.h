@@ -37,13 +37,14 @@ private:
     void parse_body();
 
     // Read incomming message from Serial battery sensor
-    void read_incoming();
+    bool read_incoming();
 
     // Battery data structure
     struct PACKED Battery_Data {
         int16_t Volts;
-        int16_t Amps_Gen;
-        int16_t Amps_Batt;
+        int16_t amps_batt;
+        int16_t amps_gen;
+        int16_t amps_rot;
     };
 
     // Used on parse_body. Made this way in case of future struct data aditions.
@@ -56,6 +57,7 @@ private:
     AP_HAL::UARTDriver *_port;
     bool _initialised: 1;
     bool _last_command_confirmed : 1;
+    uint32_t _last_reading_ms;
     
     // Variables used for protocol reading and parsing
     uint8_t _checksum;

@@ -273,8 +273,9 @@ void AP_SerialManager::init()
                     break;
 
                 case SerialProtocol_Serialbatt:
-                    // Serial protocol for battery monitor on QH
-                    state[i].uart->begin(map_baudrate(state[i].baud), 128, 128);
+                    // Serial protocol for battery monitor on QH. baud hardcoded to 57600
+                    state[i].baud = 57600;
+                    state[i].uart->begin(map_baudrate(state[i].baud), 32, 32);
                     break;
             }
         }
