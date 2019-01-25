@@ -172,17 +172,20 @@ void AP_Mount_QHPayload::PL_tracker()
 void AP_Mount_QHPayload::PL_update_angle_targets()
 {
     // if joystick_speed is defined then pilot input defines a rate of change of the angle
-    if (_frontend._joystick_speed) {
+    if (_frontend._joystick_speed && _track_msg_rdy) {
 
         if ( _track_state == Tracking ){
             float tilt = PL_tracker_PID(_Track_Y);
             float pan = PL_tracker_PID(_Track_X);
+
+            _track_msg_rdy = false;
 
                 _angle_ef_target_rad.y += tilt * 0.0001f * _frontend._joystick_speed;
                 _angle_ef_target_rad.y = constrain_float(_angle_ef_target_rad.y, radians(_state._tilt_angle_min*0.01f), radians(_state._tilt_angle_max*0.01f));
 
                 _angle_ef_target_rad.z += pan * 0.0001f * _frontend._joystick_speed;
                 _angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z, radians(_state._pan_angle_min*0.01f), radians(_state._pan_angle_max*0.01f));
+
         }
     }
 }
@@ -191,76 +194,9 @@ void AP_Mount_QHPayload::PL_update_angle_targets()
 // Tracker PIDS
 float AP_Mount_QHPayload::PL_tracker_PID(float error)
 {
-    uint32_t tnow = AP_HAL::millis();
-    uint32_t dt = tnow - _last_t;
-    float output = 0;
-    float delta_time;
-
-    if (_last_t == 0 || dt > 1000) {
-        dt = 0;
-
-		// if this PID hasn't been used for a full second then zero
-		// the intergator term. This prevents I buildup from a
-		// previous fight mode from causing a massive return before
-		// the integrator gets a chance to correct itself
-		PL_reset_I();
-    }
-    _last_t = tnow;
-
-    float scaler = _state._scl;
-
-    delta_time = (float)dt / 1000.0f;
-
     // Compute proportional component
-    _PID_info.P = error * _state._kp;
-    output += _PID_info.P;
-
-    // Compute derivative component if time has elapsed
-    if ((fabsf(_state._kd) > 0) && (dt > 0)) {
-        float derivative;
-
-		if (isnan(_last_derivative)) {
-			// we've just done a reset, suppress the first derivative
-			// term as we don't want a sudden change in input to cause
-			// a large D output change			
-			derivative = 0;
-			_last_derivative = 0;
-		} else {
-			derivative = (error - _last_error) / delta_time;
-		}
-
-        // discrete low pass filter, cuts out the
-        // high frequency noise that can drive the controller crazy
-        float RC = 1/(2*M_PI*_state._fCut);
-        derivative = _last_derivative +
-                     ((delta_time / (RC + delta_time)) *
-                      (derivative - _last_derivative));
-
-        // update state
-        _last_error             = error;
-        _last_derivative    = derivative;
-
-        // add in derivative component
-        _PID_info.D = _state._kd * derivative;
-        output                          += _PID_info.D;
-    }
-
-    // scale the P and D components
-    output *= scaler;
-    _PID_info.D *= scaler;
-    _PID_info.P *= scaler;
-
-    // Compute integral component if time has elapsed
-    if ((fabsf(_state._ki) > 0) && (dt > 0)) {
-        _integrator             += (error * _state._ki) * scaler * delta_time;
-        if (_integrator < -_state._imax) {
-            _integrator = -_state._imax;
-        } else if (_integrator > _state._imax) {
-            _integrator = _state._imax;
-        }
-        _PID_info.I = _integrator;
-        output += _integrator;
-    }
+    _PID_info.P = error * _state._kp*_state._scl;
+    float output = _PID_info.P;
 
     return output;
 }
@@ -292,6 +228,7 @@ void AP_Mount_QHPayload::PL_parse_body()
     _Track_X = _PL_buffer.msg.X;
     _Track_Y = _PL_buffer.msg.Y;
 
+    _track_msg_rdy = true;
     // PARSE STATUS?
 }
 

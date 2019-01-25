@@ -16,6 +16,7 @@ public:
         AP_Mount_Alexmos(frontend, state, instance),
         _PL_port(nullptr),
         _PL_initialised(false),
+        _track_msg_rdy(false),
         _rec_state(Standby),
         _track_state(NoTracking),
         _last_rec_rc(0),
@@ -213,6 +214,7 @@ private:
 
     bool _PL_initialised : 1;
     bool _track_high : 1;
+    bool _track_msg_rdy : 1;
 
     uint8_t _PL_step;
     uint8_t _PL_checksum;
