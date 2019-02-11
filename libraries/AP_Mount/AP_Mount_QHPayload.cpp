@@ -16,18 +16,73 @@ void AP_Mount_QHPayload::init(const AP_SerialManager& serial_manager)
 // Update method. It is called periodically, at 60 Hz
 void AP_Mount_QHPayload::update()
 {
+    uint32_t timeprov;
+    uint32_t timestart = AP_HAL::micros();
+
     if (!_PL_initialised) {
         return;
     }
 
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_read_incoming();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "READ INCOMING: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_vid_src();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "VID: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_set_zoom();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "ZOOM: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_rec();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "REC: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_tracker();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "TRACKER: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
+
     PL_update_angle_targets();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "UPDATE ANGLE: %5.3f", (double)timeprov);
+
+    timestart = AP_HAL::micros();
     
     AP_Mount_Alexmos::update();
+
+    timeprov = AP_HAL::micros()-timestart;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "ALEXMOS: %5.3f", (double)timeprov);
+
 }
 
 // Start/Stop recording
@@ -67,12 +122,12 @@ void AP_Mount_QHPayload::PL_set_zoom()
 {
     uint16_t rc_value = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
 
-    _scaler = (1000-rc_value)*0.0001f*_state._scl;
-
     // check if rc has changed. If not return, no need to send to much equal commands.
     if ( rc_value < _last_zoom_rc+5 && rc_value > _last_zoom_rc-5 ){
         return;
     }
+
+    _kp = ((_state._kpmax-_state._kpmin)*0.001*(rc_value))+_state._kpmin;
 
     // Set speed sensibility
     _frontend._joystick_speed = ((_state._Speed_max-_state._Speed_min)*0.001*(rc_value))+_state._Speed_min;
@@ -195,22 +250,12 @@ void AP_Mount_QHPayload::PL_update_angle_targets()
 float AP_Mount_QHPayload::PL_tracker_PID(float error)
 {
     // Compute proportional component
-    _PID_info.P = error * _state._kp*_state._scl;
+    _PID_info.P = error * _kp;
     float output = _PID_info.P;
 
     return output;
 }
 
-
-// reset tracker I therm
-void AP_Mount_QHPayload::PL_reset_I()
-{
-    _integrator = 0;
-	// we use NAN (Not A Number) to indicate that the last 
-	// derivative value is not valid
-    _last_derivative = NAN;
-    _PID_info.I = 0;
-}
 
 // Send command to QHPayload API
 void AP_Mount_QHPayload::PL_send_command(uint8_t* data, uint8_t size)

@@ -192,13 +192,8 @@ protected:
         AP_Int8         _Speed_max;
 
         //--QHPayload PID tracker
-        AP_Float        _kp;
-        AP_Float        _ki;
-        AP_Float        _kd;
-        AP_Int16        _imax;
-        AP_Int8         _fCut;
-        AP_Float        _scl;
-        AP_Int16         _DZ;
+        AP_Float        _kpmin;
+        AP_Float        _kpmax;
 
         //--------------------
 

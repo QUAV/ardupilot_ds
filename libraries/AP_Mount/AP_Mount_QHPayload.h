@@ -56,10 +56,6 @@ private:
     // Tracker PID
     float PL_tracker_PID(float error);
 
-    // Reset Tracker I therm
-    void PL_reset_I();
-
-
     // Serial related methods
     void PL_write_params();
     void PL_send_command(uint8_t* data, uint8_t size);
@@ -229,11 +225,9 @@ private:
 
     int16_t _Track_X;
     int16_t _Track_Y;
-    
+
+    float _kp;
+
     uint32_t _last_t;
-    float _integrator;
-    float _last_error;
-    float _last_derivative;
-    float _scaler;
 
 };

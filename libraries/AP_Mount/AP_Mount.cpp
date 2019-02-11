@@ -209,34 +209,21 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
 
     // 24 is AVAILABLE
 
-    AP_GROUPINFO("_Zoom_CH", 20, AP_Mount, state[0]._Zoom_ch, 6),
+    AP_GROUPINFO("_T_Zm_CH", 20, AP_Mount, state[0]._Zoom_ch, 6),
 
-    AP_GROUPINFO("_Video_CH", 21, AP_Mount, state[0]._Video_ch, 7),
+    AP_GROUPINFO("_T_Vid_CH", 21, AP_Mount, state[0]._Video_ch, 7),
 
-    AP_GROUPINFO("_Rec_CH", 22, AP_Mount, state[0]._Rec_ch, 8),
+    AP_GROUPINFO("_T_Rec_CH", 22, AP_Mount, state[0]._Rec_ch, 8),
 
-    AP_GROUPINFO("_Track_CH", 23, AP_Mount, state[0]._Track_ch, 8),
+    AP_GROUPINFO("_T_trck_CH", 23, AP_Mount, state[0]._Track_ch, 10),
 
-    AP_GROUPINFO("_Spd_mn", 24, AP_Mount, state[0]._Speed_min, 8),
+    AP_GROUPINFO("_T_Spd_mn", 24, AP_Mount, state[0]._Speed_min, 8),
 
-    AP_GROUPINFO("_Spd_mx", 25, AP_Mount, state[0]._Speed_max, 50),
+    AP_GROUPINFO("_T_Spd_mx", 25, AP_Mount, state[0]._Speed_max, 80),
 
-    AP_GROUPINFO("_Track_P", 26, AP_Mount, state[0]._kp, 0),
+    AP_GROUPINFO("_T_kPmin", 26, AP_Mount, state[0]._kpmin, 0.003),
 
-    AP_GROUPINFO("_Track_I", 27, AP_Mount, state[0]._ki, 0),
-
-    AP_GROUPINFO("_Track_D", 28, AP_Mount, state[0]._kd, 0),
-
-    AP_GROUPINFO("_Track_Imx", 29, AP_Mount, state[0]._imax, 0),
-
-    AP_GROUPINFO("_Track_Fct", 30, AP_Mount, state[0]._fCut, 0),
-
-    AP_GROUPINFO("_Track_scl", 31, AP_Mount, state[0]._scl, 0),
-
-    AP_GROUPINFO("_Track_dz", 32, AP_Mount, state[0]._DZ, 0),
-
-
-
+    AP_GROUPINFO("_T_kPmax", 27, AP_Mount, state[0]._kpmax, 0.006),
 
 #if AP_MOUNT_MAX_INSTANCES > 1
     // @Param: 2_DEFLT_MODE

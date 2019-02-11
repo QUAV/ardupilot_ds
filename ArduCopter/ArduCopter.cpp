@@ -138,7 +138,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(gcs_send_deferred,     50,    550),
     SCHED_TASK(gcs_data_stream_send,  50,    550),
 #if MOUNT == ENABLED
-    SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          60,  75),
+    SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          50,  150),
 #endif
 #if CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Camera,            &copter.camera,              update_trigger,  50,  75),
