@@ -41,24 +41,27 @@ void AP_BattMonitor_Serialbatt::read()
 
     gcs().send_text(MAV_SEVERITY_INFO, "numc %5.3f", (double)_port->available());
 
+    // Request next message
+    _port->write((const uint8_t*)"+>", 2);
+
     if (read_incoming()){
-    
-    _state.healthy = true;
+        
+        _state.healthy = true;
 
-    gcs().send_text(MAV_SEVERITY_INFO, "Volts: %5.3f Amps_batt: %5.3f", (double)_state.voltage, (double)_state.current_amps);
+        gcs().send_text(MAV_SEVERITY_INFO, "Volts: %5.3f Amps_batt: %5.3f", (double)_state.voltage, (double)_state.current_amps);
 
-    gcs().send_text(MAV_SEVERITY_INFO, "Amps_gen: %5.3f Amps_rot: %5.3f", (double)_state.generator_amps, (double)_state.rotor_amps);
-    
-    uint32_t tnow = AP_HAL::micros();
-    float dt = tnow - _state.last_time_micros;
+        gcs().send_text(MAV_SEVERITY_INFO, "Amps_gen: %5.3f Amps_rot: %5.3f", (double)_state.generator_amps, (double)_state.rotor_amps);
+        
+        uint32_t tnow = AP_HAL::micros();
+        float dt = tnow - _state.last_time_micros;
 
-    // consumed mah and watts
-    if (_state.last_time_micros != 0 && dt < 2000000.0f) {
-            // .0002778 is 1/3600 (conversion to hours)
-            float mah = _state.current_amps * dt * 0.0000002778f;
-            _state.consumed_mah += mah;
-            _state.consumed_wh  += 0.001f * mah * _state.voltage;
-        }
+        // consumed mah and watts
+        if (_state.last_time_micros != 0 && dt < 2000000.0f) {
+                // .0002778 is 1/3600 (conversion to hours)
+                float mah = _state.current_amps * dt * 0.0000002778f;
+                _state.consumed_mah += mah;
+                _state.consumed_wh  += 0.001f * mah * _state.voltage;
+            }
 
         // record time
         _state.last_time_micros = tnow;
