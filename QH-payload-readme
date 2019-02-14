@@ -1,0 +1,9 @@
+TODO
+
+-set defaults (I think they are all right but need flight test)
+-re check time for each loop. Right now it was about 200 us
+-re check zoom hex cmds
+-CANCEL TRACK CROSS!!!! sixth byte 0x26
+-Adaptative template 3C
+-states?
+-angles on osd
