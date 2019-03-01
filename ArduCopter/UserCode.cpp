@@ -39,7 +39,9 @@ void Copter::userhook_SlowLoop()
 #ifdef USERHOOK_SUPERSLOWLOOP
 void Copter::userhook_SuperSlowLoop()
 {
-    // put your 1Hz code here
+    if ( battery.healthy() == false ) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Generador esta muerto");
+    }
 }
 #endif
 

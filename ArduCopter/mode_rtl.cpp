@@ -338,7 +338,7 @@ void Copter::ModeRTL::land_start()
 
 bool Copter::ModeRTL::landing_gear_should_be_deployed() const
 {
-    switch(_state) {
+   /*  switch(_state) {
     case RTL_LoiterAtHome:
     case RTL_Land:
     case RTL_FinalDescent:
@@ -346,7 +346,10 @@ bool Copter::ModeRTL::landing_gear_should_be_deployed() const
     default:
         return false;
     }
-    return false;
+    return false; */
+
+    // Always true
+    return true;
 }
 
 // rtl_returnhome_run - return home

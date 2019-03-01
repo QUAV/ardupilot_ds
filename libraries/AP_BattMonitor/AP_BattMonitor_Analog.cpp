@@ -52,6 +52,10 @@ AP_BattMonitor_Analog::read()
         // record time
         _state.last_time_micros = tnow;
     }
+
+    if ( _state.current_amps < 2 ) {
+        _state.healthy = false;
+    }
 }
 
 /// return true if battery provides current info
