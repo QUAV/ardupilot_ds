@@ -348,7 +348,7 @@ bool Copter::ModeRTL::landing_gear_should_be_deployed() const
     }
     return false; */
 
-    // Always true
+    // Always true, it is now hooked to buzzer QH
     return true;
 }
 

@@ -45,14 +45,14 @@ const AP_Param::GroupInfo AP_BattMonitor_Params::var_info[] = {
     // @Description: Number of amps that a 1V reading on the current sensor corresponds to. On the APM2 or Pixhawk using the 3DR Power brick this should be set to 17. For the Pixhawk with the 3DR 4in1 ESC this should be 17.
     // @Units: A/V
     // @User: Standard
-    AP_GROUPINFO("AMP_PERVLT", 5, AP_BattMonitor_Params, _curr_amp_per_volt, AP_BATT_CURR_AMP_PERVOLT_DEFAULT),
+    AP_GROUPINFO("AMP_PERVLT", 5, AP_BattMonitor_Params, _curr_amp_per_volt, 117),
 
     // @Param: AMP_OFFSET
     // @DisplayName: AMP offset
     // @Description: Voltage offset at zero current on current sensor
     // @Units: V
     // @User: Standard
-    AP_GROUPINFO("AMP_OFFSET", 6, AP_BattMonitor_Params, _curr_amp_offset, 0),
+    AP_GROUPINFO("AMP_OFFSET", 6, AP_BattMonitor_Params, _curr_amp_offset, 1.645),
 
     // @Param: CAPACITY
     // @DisplayName: Battery capacity
