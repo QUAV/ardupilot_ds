@@ -102,7 +102,7 @@ void AP_Mount_Backend::update_targets_from_rc()
         }
         if (pan_rc_in && (rc_ch(pan_rc_in))) {
             _angle_ef_target_rad.z += rc_ch(pan_rc_in)->norm_input_dz() * 0.0001f * _frontend._joystick_speed;
-            _angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z, radians(_state._pan_angle_min*0.01f), radians(_state._pan_angle_max*0.01f));
+            //_angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z, radians(_state._pan_angle_min*0.01f), radians(_state._pan_angle_max*0.01f));
         }
     } else {
         // allow pilot position input to come directly from an RC_Channel
