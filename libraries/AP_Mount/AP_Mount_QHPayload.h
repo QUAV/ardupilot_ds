@@ -38,11 +38,33 @@ public:
     // Probably needed to add calls to alexmos public methods
 
 private:
+
+    enum RecordingState {
+        Standby = 0,
+        Recording = 1,
+        Snapshot = 2
+    };
+
+    enum TrackingState {
+        NoTracking = 0,
+        Tracking = 1
+    };
+
+    enum VideoMode {
+        EO = 0,
+        IRplusEO = 1,
+        IR = 2,
+        EOplusIR = 3
+    };
+
+    // Read rc functions
+    void PL_check_rc();
+
     // Start/Stop recording
     void PL_rec();
 
     // Set zoom for Sony Camera
-    void PL_set_zoom();
+    void PL_set_EOzoom();
 
     // Update video source 
     void PL_vid_src();
@@ -61,17 +83,6 @@ private:
     void PL_send_command(uint8_t* data, uint8_t size);
     void PL_parse_body();
     void PL_read_incoming();
-
-    enum RecordingState {
-        Standby = 0,
-        Recording = 1,
-        Snapshot = 2
-    };
-
-    enum TrackingState {
-        NoTracking = 0,
-        Tracking = 1
-    };
 
     struct PID_Info {
         float desired;
@@ -97,7 +108,7 @@ private:
         uint8_t Track_Square_size  = 0x00;               // 14 
         uint8_t Video_Source       = 0x00;               // 15
         uint8_t Byte_16            = 0x00;               // 16
-        uint8_t Byte_17            = 0x00;               // 17
+        uint8_t Byte_17             = 0x00;               // 17
         uint8_t Byte_18            = 0x00;               // 18
         uint8_t Byte_19            = 0x00;               // 19
         uint8_t Byte_20            = 0x00;               // 20 pitching angle
@@ -183,7 +194,7 @@ private:
     };
 
     // Visca message for direct zoom control
-    struct PACKED FCB_zoom_msg {
+    struct PACKED EO_zoom_msg {
         uint8_t Byte_1 = 0x81;
         uint8_t Byte_2 = 0x01;
         uint8_t Byte_3 = 0x04;
@@ -218,6 +229,7 @@ private:
 
     RecordingState _rec_state;
     TrackingState _track_state;
+    VideoMode _vid_mode;
 
     uint16_t _last_zoom_rc;
     uint16_t _last_vid_rc;
@@ -227,6 +239,8 @@ private:
     int16_t _Track_Y;
 
     float _kp;
+
+    uint16_t _EOzoom;
 
     uint32_t _last_t;
 

@@ -209,17 +209,17 @@ void AP_Mount_Alexmos::parse_body()
             _current_angle.y = VALUE_TO_DEGREE(_buffer.angles_ext.angle_pitch);
             _current_angle.z = VALUE_TO_DEGREE(_buffer.angles_ext.angle_yaw);
 
-            gcs().send_text(MAV_SEVERITY_INFO, "YAW: %5.3f", (double)_current_angle.z);
+           // gcs().send_text(MAV_SEVERITY_INFO, "YAW: %5.3f", (double)_current_angle.z);
 
             _current_stat_rot_angle.x = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_roll);
             _current_stat_rot_angle.y = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_pitch); 
             _current_stat_rot_angle.z = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_yaw);
             // stat_rot_angle does not overflow, so we need to make it consistent with AM IMU yaw angle range (-720, 720)
-            gcs().send_text(MAV_SEVERITY_INFO, "YAW B WRAP: %5.3f", (double)_current_stat_rot_angle.z);
+            //gcs().send_text(MAV_SEVERITY_INFO, "YAW B WRAP: %5.3f", (double)_current_stat_rot_angle.z);
 
             _current_stat_rot_angle.z = wrap_2x720(_current_stat_rot_angle.z);   
             
-            gcs().send_text(MAV_SEVERITY_INFO, "YAW A WRAP: %5.3f", (double)_current_stat_rot_angle.z);
+            //gcs().send_text(MAV_SEVERITY_INFO, "YAW A WRAP: %5.3f", (double)_current_stat_rot_angle.z);
 
             break;
 

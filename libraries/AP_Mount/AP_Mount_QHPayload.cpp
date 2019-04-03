@@ -11,6 +11,12 @@ void AP_Mount_QHPayload::init(const AP_SerialManager& serial_manager)
     }
 
     AP_Mount_Alexmos::init(serial_manager);
+    _last_zoom_rc = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
+    _last_vid_rc = RC_Channels::rc_channel(_state._Video_ch-1)->get_control_in();
+    _last_rec_rc = RC_Channels::rc_channel(_state._Rec_ch-1)->get_control_in();
+    _rec_state = Standby;
+    _vid_mode = EOplusIR;
+    _track_state = NoTracking;
 }
 
 // Update method. It is called periodically, at 60 Hz
@@ -18,208 +24,210 @@ void AP_Mount_QHPayload::update()
 {
 //    uint32_t timeprov;
 //    uint32_t timestart = AP_HAL::micros();
+//    timeprov = AP_HAL::micros()-timestart;
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (dou//ble)timeprov);
+//    timestart = AP_HAL::micros();
 
     if (!_PL_initialised) {
         return;
     }
-
-//    timeprov = AP_HAL::micros()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
     PL_read_incoming();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "READ INCOMING: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
-    PL_vid_src();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "VID: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
-    PL_set_zoom();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "ZOOM: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
-    PL_rec();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "REC: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
-    PL_tracker();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "TRACKER: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-
+    PL_check_rc();        
     PL_update_angle_targets();
-
-//    timeprov = AP_HAL::micro//s()-timestart;
-
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "UPDATE ANGLE: %5.3f", (dou//ble)timeprov);
-
-//    timestart = AP_HAL::micros();
-    
     AP_Mount_Alexmos::update();
 
-//    timeprov = AP_HAL::micro//s()-timestart;
+}
 
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "ALEXMOS: %5.3f", (double)timeprov);
+// check rc
+void AP_Mount_QHPayload::PL_check_rc()
+{
+    // Rec functionWaf: Leaving directory `/home/sas/ardupilot2/build/fmuv5'
 
+    uint16_t rc_val = RC_Channels::rc_channel(_state._Rec_ch-1)->get_control_in();
+
+    if ( rc_val > _last_rec_rc+20 || rc_val < _last_rec_rc-20 ) {
+
+        _last_rec_rc = rc_val;
+
+        if ( rc_val > 800 && _rec_state != Recording ){
+            _rec_state = Recording;
+        } else if ( rc_val < 700 && rc_val > 300 && _rec_state != Standby ) {
+            _rec_state = Standby;
+        } else if ( rc_val < 200 && _rec_state != Snapshot) {
+            _rec_state = Snapshot;
+        }
+
+        PL_rec();
+    }
+
+    // Set zoom function
+    rc_val = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
+
+    if ( rc_val > _last_zoom_rc+5 || rc_val < _last_zoom_rc-5 ){
+
+        _last_zoom_rc = rc_val;
+        // adjust gain for tracker according zoom
+        _kp = ((_state._kpmax-_state._kpmin)*0.001*(rc_val))+_state._kpmin;
+        
+        // adjust velocity for manual pointing according zoom
+        _frontend._joystick_speed = ((_state._Speed_max-_state._Speed_min)*0.001*(rc_val))+_state._Speed_min;
+        
+        _EOzoom = (1000-rc_val)*16.384;
+
+        gcs().send_text(MAV_SEVERITY_INFO, "zoom: %5.3f", (double)_EOzoom);
+
+        PL_set_EOzoom();
+    }
+
+    // Set video mode
+    rc_val = RC_Channels::rc_channel(_state._Video_ch-1)->get_control_in();
+
+    if ( rc_val > _last_vid_rc+20 || rc_val < _last_vid_rc-20 ){
+
+        _last_vid_rc = rc_val;
+
+        if ( _last_vid_rc > 900 ){
+            _vid_mode = EO;
+        } else if ( _last_vid_rc > 500 ) {
+            _vid_mode = EOplusIR;
+        } else if ( _last_vid_rc > 100 ) {
+            _vid_mode = IR;
+        } else {
+            _vid_mode = IRplusEO;
+        }
+
+        PL_vid_src();
+    }
+
+    rc_val = RC_Channels::rc_channel(_state._Track_ch-1)->get_control_in();
+
+    if ( rc_val > 700 && _track_high == 0 ) {
+        _track_high = 1;
+
+        PL_tracker();
+
+    } else if ( rc_val < 700 && _track_high == 1 ) {
+        _track_high = 0;
+    }
 }
 
 // Start/Stop recording
 void AP_Mount_QHPayload::PL_rec()
 {
-    uint16_t rc_value = RC_Channels::rc_channel(_state._Rec_ch-1)->get_control_in();
+    Type2_msg outgoing_buffer;
 
-    if ( rc_value < _last_rec_rc+20 && rc_value > _last_rec_rc-20 ){
-        return;
+    switch(_rec_state){
+
+        case Standby:
+            outgoing_buffer.ImSett_SD_OSD = 0x00;
+            _rec_state = Standby;
+            break;
+
+        case Recording:
+            outgoing_buffer.ImSett_SD_OSD = 0x01;
+            _rec_state = Recording;
+            break;
+
+        case Snapshot:
+            outgoing_buffer.ImSett_SD_OSD = 0x02;
+            _rec_state = Snapshot;
+            break;
     }
 
-    _last_rec_rc = rc_value;
+    outgoing_buffer.Working_state = 0x7C;
+    outgoing_buffer.checksum =  outgoing_buffer.Header_1+
+                                outgoing_buffer.Header_2+
+                                outgoing_buffer.Address+
+                                outgoing_buffer.Working_state+
+                                outgoing_buffer.ImSett_SD_OSD;
 
-    if ( rc_value > 800 && _rec_state == Recording ){
-        Type2_msg outgoing_buffer;
-        outgoing_buffer.Working_state = 0x7C;
-        outgoing_buffer.ImSett_SD_OSD = 0x00;
-        outgoing_buffer.checksum =  outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.ImSett_SD_OSD;
-        PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-        _rec_state = Standby;
-
-    } else if ( rc_value < 200 && _rec_state == Standby ) {
-        Type2_msg outgoing_buffer;
-        outgoing_buffer.Working_state = 0x7C;
-        outgoing_buffer.ImSett_SD_OSD = 0x01;
-        outgoing_buffer.checksum =  outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.ImSett_SD_OSD+outgoing_buffer.Byte_8+outgoing_buffer.Byte_9;
-        PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-        _rec_state = Recording;
-
-    } else {
-        return;
-    }
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 }
 
 // Send zoom to Sony Camera
-void AP_Mount_QHPayload::PL_set_zoom()
+void AP_Mount_QHPayload::PL_set_EOzoom()
 {
-    uint16_t rc_value = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
+    // this is stuff for the visca protocol for zooming
+    int val1  = _EOzoom &  15;
+    int val22 = _EOzoom >> 4;
+    int val33 = _EOzoom >> 8;
+    int val44 = _EOzoom >> 12;
+    int val2  = val22   &  15;
+    int val3  = val33   &  15;
+    int val4  = val44   &  15;
 
-    // check if rc has changed. If not return, no need to send to much equal commands.
-    if ( rc_value < _last_zoom_rc+5 && rc_value > _last_zoom_rc-5 ){
-        return;
-    }
-
-    _kp = ((_state._kpmax-_state._kpmin)*0.001*(rc_value))+_state._kpmin;
-
-    // Set speed sensibility
-    _frontend._joystick_speed = ((_state._Speed_max-_state._Speed_min)*0.001*(rc_value))+_state._Speed_min;
-
-    // Visca needs 0x4000 as maximum zoom cmd for 30x zoom. More than that is digital zoom
-    uint16_t zoom_visca_value = (1000-rc_value)*16.384;
-
-    FCB_zoom_msg outgoing_buffer;
-
-    int valuea = zoom_visca_value & 15;
-    int valuebZ = zoom_visca_value >> 4;
-    int valuecZ = zoom_visca_value >> 8;
-    int valuedZ = zoom_visca_value >> 12;
-    int valueb = valuebZ & 15  ;
-    int valuec = valuecZ & 15 ;
-    int valued = valuedZ & 15 ;
-
-    outgoing_buffer.Byte_5 =  valued;
-    outgoing_buffer.Byte_6 =  valuec;
-    outgoing_buffer.Byte_7 =  valueb;
-    outgoing_buffer.Byte_8 =  valuea;
+    // prepare buffer
+    EO_zoom_msg outgoing_buffer;
+    outgoing_buffer.Byte_5 = val4;
+    outgoing_buffer.Byte_6 = val3;
+    outgoing_buffer.Byte_7 = val2;
+    outgoing_buffer.Byte_8 = val1;
 
     PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-    _last_zoom_rc =  rc_value;
 }
 
-
-// Control tracker 
+// Control vid source
 void AP_Mount_QHPayload::PL_vid_src()
 {
-    uint16_t Video_value = RC_Channels::rc_channel(_state._Video_ch-1)->get_control_in();
-    
-    // check if rc has changed. If not return, no need to send to much equal commands.
-    if ( Video_value < _last_vid_rc+20 && Video_value > _last_vid_rc-20 ){
-        return;
-    }
-    
     Type1_msg outgoing_buffer;
 
-    if ( Video_value > 750 ){
-        outgoing_buffer.Video_Source = 0x00;
-    } else if ( Video_value > 500 ){
-        outgoing_buffer.Video_Source = 0x01;
-    } else if ( Video_value > 250 ){
-        outgoing_buffer.Video_Source = 0x02;
-    } else {
-        outgoing_buffer.Video_Source = 0x03;
+    switch(_vid_mode){
+
+        case EO:
+            outgoing_buffer.Video_Source = 0x00;
+            break;
+
+        case IRplusEO:
+            outgoing_buffer.Video_Source = 0x01;
+            break;
+
+        case IR:
+            outgoing_buffer.Video_Source = 0x02;
+            break;
+
+        case EOplusIR:
+            outgoing_buffer.Video_Source = 0x03;
+            break;
     }
 
-    outgoing_buffer.Working_state    = 0x78;                                                   // 6 Image setting mode, SD mode, OSD Mode
-    outgoing_buffer.checksum = outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.Video_Source;  // on constructor already implemented headers and address
+    outgoing_buffer.Working_state = 0x78; 
+    outgoing_buffer.checksum = outgoing_buffer.Header_1+
+                               outgoing_buffer.Header_2+
+                               outgoing_buffer.Address+
+                               outgoing_buffer.Working_state+
+                               outgoing_buffer.Video_Source;  // on constructor already implemented headers and address
 
     PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-    _last_vid_rc =  Video_value;
 }
 
 
 // Update tracker
 void AP_Mount_QHPayload::PL_tracker()
 {
-    uint16_t rc = RC_Channels::rc_channel(_state._Track_ch-1)->get_control_in();
+    Type1_msg outgoing_buffer;
 
-    if ( rc > 700 && _track_high == 0 ) {
+    switch (_track_state) {
 
-        _track_high = 1;
-        Type1_msg outgoing_buffer;
+        case NoTracking:
+            outgoing_buffer.Working_state = 0x71;
+            outgoing_buffer.Confirm_tracking = 0x01;
+            _track_state = Tracking;
+            break;
 
-        switch (_track_state) {
-
-            case NoTracking:
-
-                outgoing_buffer.Working_state = 0x71;
-                outgoing_buffer.Confirm_tracking = 0x01;
-                outgoing_buffer.checksum = outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.Confirm_tracking;
-                PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-
-                _track_state = Tracking;
-                break;
-
-            case Tracking:
-
-                outgoing_buffer.Confirm_tracking = 0x00;
-                outgoing_buffer.Working_state = 0x26;
-                outgoing_buffer.checksum = outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.Confirm_tracking;
-                PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
-
-                _track_state = NoTracking;
-                break;
-        }
-    } else if ( rc < 700 && _track_high == 1 ) {
-        _track_high = 0;
+        case Tracking:
+            outgoing_buffer.Working_state = 0x26;
+            outgoing_buffer.Confirm_tracking = 0x00;
+            _track_state = NoTracking;
+            break;
     }
+
+    outgoing_buffer.checksum = outgoing_buffer.Header_1+
+                               outgoing_buffer.Header_2+
+                               outgoing_buffer.Address+
+                               outgoing_buffer.Working_state+
+                               outgoing_buffer.Confirm_tracking;
+
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 }
 
 
@@ -227,24 +235,20 @@ void AP_Mount_QHPayload::PL_tracker()
 void AP_Mount_QHPayload::PL_update_angle_targets()
 {
     // if joystick_speed is defined then pilot input defines a rate of change of the angle
-    if (_frontend._joystick_speed && _track_msg_rdy) {
-
+    if ( _track_msg_rdy ) {
         if ( _track_state == Tracking ){
             float tilt = PL_tracker_PID(_Track_Y);
             float pan = PL_tracker_PID(_Track_X);
 
             _track_msg_rdy = false;
 
-                _angle_ef_target_rad.y += tilt * 0.0001f * _frontend._joystick_speed;
-                _angle_ef_target_rad.y = constrain_float(_angle_ef_target_rad.y, radians(_state._tilt_angle_min*0.01f), radians(_state._tilt_angle_max*0.01f));
-
-                _angle_ef_target_rad.z += pan * 0.0001f * _frontend._joystick_speed;
-                gcs().send_text(MAV_SEVERITY_INFO, "yaw tracker: %5.3f", (double)_angle_ef_target_rad.z);
-
+            _angle_ef_target_rad.y += tilt * 0.0001f * _frontend._joystick_speed;
+            _angle_ef_target_rad.y = constrain_float(_angle_ef_target_rad.y, radians(_state._tilt_angle_min*0.01f), radians(_state._tilt_angle_max*0.01f));
+            
+            _angle_ef_target_rad.z += pan * 0.0001f * _frontend._joystick_speed;
         }
     }
 }
-
 
 // Tracker PIDS
 float AP_Mount_QHPayload::PL_tracker_PID(float error)
@@ -274,7 +278,6 @@ void AP_Mount_QHPayload::PL_parse_body()
     _Track_Y = _PL_buffer.msg.Y;
 
     _track_msg_rdy = true;
-    // PARSE STATUS?
 }
 
 void AP_Mount_QHPayload::PL_read_incoming()
@@ -327,11 +330,4 @@ void AP_Mount_QHPayload::PL_read_incoming()
                 PL_parse_body();
         }
     }
-}
-
-
-// Write parameters to QHPayload. Here should be the video settings aside from tracker
-void AP_Mount_QHPayload::PL_write_params()
-{
-
 }
