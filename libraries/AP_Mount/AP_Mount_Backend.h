@@ -22,6 +22,8 @@
 #include <AP_Common/AP_Common.h>
 #include "AP_Mount.h"
 
+#include <GCS_MAVLink/GCS.h>
+
 class AP_Mount_Backend
 {
 public:

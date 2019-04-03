@@ -19,6 +19,7 @@ void AP_Mount_Alexmos::update()
         return;
     }
 
+    get_angles();
     read_incoming(); // read the incoming messages from the gimbal
 
     // update based on mount mode
@@ -90,6 +91,7 @@ void AP_Mount_Alexmos::status_msg(mavlink_channel_t chan)
 void AP_Mount_Alexmos::get_angles()
 {
     uint8_t data[1] = {(uint8_t)1};
+    send_command(CMD_GET_ANGLES_EXT, data, 1);
     send_command(CMD_GET_ANGLES, data, 1);
 }
 
@@ -201,6 +203,26 @@ void AP_Mount_Alexmos::parse_body()
             _current_angle.z = VALUE_TO_DEGREE(_buffer.angles.angle_yaw);
             break;
 
+        case CMD_GET_ANGLES_EXT:
+            // Alexmoss Pitch/Tilt is positive when pointing downward
+            _current_angle.x = VALUE_TO_DEGREE(_buffer.angles_ext.angle_roll);
+            _current_angle.y = VALUE_TO_DEGREE(_buffer.angles_ext.angle_pitch);
+            _current_angle.z = VALUE_TO_DEGREE(_buffer.angles_ext.angle_yaw);
+
+            gcs().send_text(MAV_SEVERITY_INFO, "YAW: %5.3f", (double)_current_angle.z);
+
+            _current_stat_rot_angle.x = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_roll);
+            _current_stat_rot_angle.y = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_pitch); 
+            _current_stat_rot_angle.z = VALUE_TO_DEGREE(_buffer.angles_ext.stator_rotor_yaw);
+            // stat_rot_angle does not overflow, so we need to make it consistent with AM IMU yaw angle range (-720, 720)
+            gcs().send_text(MAV_SEVERITY_INFO, "YAW B WRAP: %5.3f", (double)_current_stat_rot_angle.z);
+
+            _current_stat_rot_angle.z = wrap_2x720(_current_stat_rot_angle.z);   
+            
+            gcs().send_text(MAV_SEVERITY_INFO, "YAW A WRAP: %5.3f", (double)_current_stat_rot_angle.z);
+
+            break;
+
         case CMD_READ_PARAMS:
             _param_read_once = true;
             _current_parameters.params = _buffer.params;
@@ -214,6 +236,21 @@ void AP_Mount_Alexmos::parse_body()
             break;
     }
 }
+
+void AP_Mount_Alexmos::update_target_2x720(Vector3f& current_target, const Vector3f& new_target, bool is_earth_fixed, bool invert_pitch)
+{
+    current_target.x = new_target.x;
+    current_target.y = invert_pitch ? -new_target.y : new_target.y;
+
+    if (!is_earth_fixed) {
+        // use last yaw encoder data to get to the closest relative position
+        current_target.z = _current_stat_rot_angle.z;
+    }
+
+    float yaw_error = wrap_180(new_target.z - current_target.z);
+    current_target.z = wrap_2x720(current_target.z + yaw_error);
+}
+
 
 /*
  * detect and read the header of the incoming message from the gimbal

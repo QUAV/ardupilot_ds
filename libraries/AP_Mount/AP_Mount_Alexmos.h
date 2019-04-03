@@ -11,6 +11,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include "AP_Mount_Backend.h"
 
+#include <GCS_MAVLink/GCS.h>
 
 //definition of the commands id for the Alexmos Serial Protocol
 #define CMD_READ_PARAMS 'R'
@@ -49,6 +50,8 @@
 #define CMD_AUTO_PID 35
 #define CMD_SERVO_OUT 36
 #define CMD_ERROR 255
+
+#define CMD_GET_ANGLES_EXT 61
 
 #define AP_MOUNT_ALEXMOS_MODE_NO_CONTROL 0
 #define AP_MOUNT_ALEXMOS_MODE_SPEED 1
@@ -105,6 +108,8 @@ private:
     // get_angles -
     void get_angles();
 
+    void update_target_2x720(Vector3f& current_target, const Vector3f& new_target, bool is_earth_fixed, bool invert_pitch);
+
     // set_motor will activate motors if true, and disable them if false
     void set_motor(bool on);
 
@@ -153,6 +158,26 @@ private:
         int16_t angle_yaw;
         int16_t rc_angle_yaw;
         int16_t rc_speed_yaw;
+    };
+
+    struct PACKED alexmos_angles_ext {
+        int16_t angle_roll;
+        int16_t rc_angle_roll;
+        int32_t stator_rotor_roll;
+        int64_t res0_r;
+        int16_t res1_r;
+
+        int16_t angle_pitch;
+        int16_t rc_angle_pitch;
+        int32_t stator_rotor_pitch;
+        int64_t res0_p;
+        int16_t res1_p;
+
+        int16_t angle_yaw;
+        int16_t rc_angle_yaw;
+        int32_t stator_rotor_yaw;
+        int64_t res0_y;
+        int16_t res1_y;
     };
 
     // CMD_CONTROL
@@ -287,6 +312,7 @@ private:
         alexmos_angles angles;
         alexmos_params params;
         alexmos_angles_speed angle_speed;
+        alexmos_angles_ext angles_ext;
     } _buffer,_current_parameters;
 
     AP_HAL::UARTDriver *_port;
@@ -301,6 +327,8 @@ private:
 
     // keep the last _current_angle values
     Vector3f _current_angle;
+    Vector3f _current_stat_rot_angle;
+
 
     // CMD_READ_PARAMS has been called once
     bool _param_read_once : 1;

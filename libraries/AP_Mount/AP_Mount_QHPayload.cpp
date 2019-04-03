@@ -16,72 +16,72 @@ void AP_Mount_QHPayload::init(const AP_SerialManager& serial_manager)
 // Update method. It is called periodically, at 60 Hz
 void AP_Mount_QHPayload::update()
 {
-    uint32_t timeprov;
-    uint32_t timestart = AP_HAL::micros();
+//    uint32_t timeprov;
+//    uint32_t timestart = AP_HAL::micros();
 
     if (!_PL_initialised) {
         return;
     }
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micros()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_read_incoming();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "READ INCOMING: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "READ INCOMING: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_vid_src();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "VID: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "VID: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_set_zoom();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "ZOOM: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "ZOOM: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_rec();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "REC: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "REC: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_tracker();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "TRACKER: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "TRACKER: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
 
     PL_update_angle_targets();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "UPDATE ANGLE: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "UPDATE ANGLE: %5.3f", (dou//ble)timeprov);
 
-    timestart = AP_HAL::micros();
+//    timestart = AP_HAL::micros();
     
     AP_Mount_Alexmos::update();
 
-    timeprov = AP_HAL::micros()-timestart;
+//    timeprov = AP_HAL::micro//s()-timestart;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "ALEXMOS: %5.3f", (double)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "ALEXMOS: %5.3f", (double)timeprov);
 
 }
 
@@ -209,8 +209,8 @@ void AP_Mount_QHPayload::PL_tracker()
 
             case Tracking:
 
-                outgoing_buffer.Working_state = 0x71;
                 outgoing_buffer.Confirm_tracking = 0x00;
+                outgoing_buffer.Working_state = 0x26;
                 outgoing_buffer.checksum = outgoing_buffer.Header_1+outgoing_buffer.Header_2+outgoing_buffer.Address+outgoing_buffer.Working_state+outgoing_buffer.Confirm_tracking;
                 PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 
@@ -239,7 +239,7 @@ void AP_Mount_QHPayload::PL_update_angle_targets()
                 _angle_ef_target_rad.y = constrain_float(_angle_ef_target_rad.y, radians(_state._tilt_angle_min*0.01f), radians(_state._tilt_angle_max*0.01f));
 
                 _angle_ef_target_rad.z += pan * 0.0001f * _frontend._joystick_speed;
-                _angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z, radians(_state._pan_angle_min*0.01f), radians(_state._pan_angle_max*0.01f));
+                gcs().send_text(MAV_SEVERITY_INFO, "yaw tracker: %5.3f", (double)_angle_ef_target_rad.z);
 
         }
     }
