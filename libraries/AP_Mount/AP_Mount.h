@@ -188,6 +188,9 @@ protected:
         AP_Int8         _Video_ch;
         AP_Int8         _Rec_ch;
         AP_Int8         _Track_ch;
+        AP_Int8         _EOAux_ch;
+        AP_Int8         _IRAux_ch;
+        AP_Int8         _IRzoom_ch;
         AP_Int8         _Speed_min;
         AP_Int8         _Speed_max;
 

@@ -17,6 +17,9 @@ void AP_Mount_QHPayload::init(const AP_SerialManager& serial_manager)
     _rec_state = Standby;
     _vid_mode = EOplusIR;
     _track_state = NoTracking;
+    _IR_palette = Grayscale;
+    _estab = OFF;
+    _defog = false;
 }
 
 // Update method. It is called periodically, at 60 Hz
@@ -25,7 +28,7 @@ void AP_Mount_QHPayload::update()
 //    uint32_t timeprov;
 //    uint32_t timestart = AP_HAL::micros();
 //    timeprov = AP_HAL::micros()-timestart;
-//    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (dou//ble)timeprov);
+//    gcs().send_text(MAV_SEVERITY_CRITICAL, "init: %5.3f", (double)timeprov);
 //    timestart = AP_HAL::micros();
 
     if (!_PL_initialised) {
@@ -34,8 +37,8 @@ void AP_Mount_QHPayload::update()
     PL_read_incoming();
     PL_check_rc();        
     PL_update_angle_targets();
-    AP_Mount_Alexmos::update();
 
+    AP_Mount_Alexmos::update();
 }
 
 // check rc
@@ -74,7 +77,7 @@ void AP_Mount_QHPayload::PL_check_rc()
         
         _EOzoom = (1000-rc_val)*16.384;
 
-        gcs().send_text(MAV_SEVERITY_INFO, "zoom: %5.3f", (double)_EOzoom);
+        gcs().send_text(MAV_SEVERITY_INFO, "EOzoom: %5.3f", (double)_EOzoom);
 
         PL_set_EOzoom();
     }
@@ -82,23 +85,16 @@ void AP_Mount_QHPayload::PL_check_rc()
     // Set video mode
     rc_val = RC_Channels::rc_channel(_state._Video_ch-1)->get_control_in();
 
-    if ( rc_val > _last_vid_rc+20 || rc_val < _last_vid_rc-20 ){
-
-        _last_vid_rc = rc_val;
-
-        if ( _last_vid_rc > 900 ){
-            _vid_mode = EO;
-        } else if ( _last_vid_rc > 500 ) {
-            _vid_mode = EOplusIR;
-        } else if ( _last_vid_rc > 100 ) {
-            _vid_mode = IR;
-        } else {
-            _vid_mode = IRplusEO;
-        }
+    if ( rc_val < 300 && _video_low == 0 ) {
+        _video_low = 1;
 
         PL_vid_src();
+    
+    } else if ( rc_val > 300 && _video_low == 1 ) {
+        _video_low = 0;
     }
 
+    // Toggle tracker
     rc_val = RC_Channels::rc_channel(_state._Track_ch-1)->get_control_in();
 
     if ( rc_val > 700 && _track_high == 0 ) {
@@ -109,6 +105,41 @@ void AP_Mount_QHPayload::PL_check_rc()
     } else if ( rc_val < 700 && _track_high == 1 ) {
         _track_high = 0;
     }
+
+    // Set ir palette
+    rc_val = RC_Channels::rc_channel(_state._Video_ch-1)->get_control_in();
+
+    if ( rc_val > 700 && _video_high == 0 ) {
+        _video_high = 1;
+
+        PL_set_IRpalette();
+
+    } else if ( rc_val < 700 && _video_high == 1 ) {
+        _video_high = 0;
+    }
+
+    // Set defog, electronic stabilization
+    rc_val = RC_Channels::rc_channel(_state._EOAux_ch-1)->get_control_in();
+
+    if ( rc_val > 700 && _EOaux_high == 0 ) {
+        _EOaux_high = 1;
+        PL_toggle_defog();
+
+    } else if ( rc_val < 700 && _EOaux_high == 1 ) {
+        _EOaux_high = 0;
+    }
+
+    if ( rc_val < 300 && _EOaux_low == 0 ) {
+        _EOaux_low = 1;
+        PL_toggle_estab();
+
+    } else if ( rc_val > 300 && _EOaux_low == 1 ) {
+        _EOaux_low = 0;
+    }
+
+
+
+
 }
 
 // Start/Stop recording
@@ -147,6 +178,26 @@ void AP_Mount_QHPayload::PL_rec()
 // Send zoom to Sony Camera
 void AP_Mount_QHPayload::PL_set_EOzoom()
 {
+//#if IRLENS25 == ENABLED
+    // Adjust IR zoom
+    if ( _EOzoom < 5800 ) {
+        _IRzoom = 1;
+    } else if ( _EOzoom < 9800 ) {
+        _IRzoom = 2;
+    } else if ( _EOzoom < 11700 ) {
+        _IRzoom = 3;
+    } else if ( _EOzoom < 12800 ) {
+        _IRzoom = 4;
+    } else {
+        _IRzoom = 5;
+    }
+
+    if ( _IRzoomprev != _IRzoom ) {
+        _IRzoomprev = _IRzoom;
+        PL_set_IRzoom();
+    }
+//#endif
+
     // this is stuff for the visca protocol for zooming
     int val1  = _EOzoom &  15;
     int val22 = _EOzoom >> 4;
@@ -166,40 +217,75 @@ void AP_Mount_QHPayload::PL_set_EOzoom()
     PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 }
 
-// Control vid source
-void AP_Mount_QHPayload::PL_vid_src()
-{
+// Set IR zoom
+void AP_Mount_QHPayload::PL_set_IRzoom()
+{   
     Type1_msg outgoing_buffer;
 
-    switch(_vid_mode){
-
-        case EO:
-            outgoing_buffer.Video_Source = 0x00;
+    switch(_IRzoom){
+        case(1):
+            outgoing_buffer.ImSett_SD_OSD = 0x81;
             break;
-
-        case IRplusEO:
-            outgoing_buffer.Video_Source = 0x01;
+        case(2):
+            outgoing_buffer.ImSett_SD_OSD = 0x82;
             break;
-
-        case IR:
-            outgoing_buffer.Video_Source = 0x02;
+        case(3):
+            outgoing_buffer.ImSett_SD_OSD = 0x83;
             break;
-
-        case EOplusIR:
-            outgoing_buffer.Video_Source = 0x03;
+        case(4):
+            outgoing_buffer.ImSett_SD_OSD = 0x84;
+            break;
+        case(5):
+            outgoing_buffer.ImSett_SD_OSD = 0x85;
             break;
     }
 
+    outgoing_buffer.Working_state = 0x7d;
+    outgoing_buffer.checksum = outgoing_buffer.Header_1+
+                               outgoing_buffer.Header_2+
+                               outgoing_buffer.Address+
+                               outgoing_buffer.Working_state+
+                               outgoing_buffer.Video_Source+
+                               outgoing_buffer.ImSett_SD_OSD;
+    
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
+}
+
+
+// Control vid source. Note the comand is the same as for IR palette, so that field also needs to be sent
+void AP_Mount_QHPayload::PL_vid_src()
+{
+    switch(_vid_mode) {
+        case EO:
+            _vid_mode = EOplusIR;
+            break;
+        
+        case EOplusIR:
+            _vid_mode = IR;
+            break;
+
+        case IR:
+            _vid_mode = IRplusEO;
+            break;
+        
+        case IRplusEO:
+            _vid_mode = EO;
+            break;
+    }
+    Type1_msg outgoing_buffer;
+
+    outgoing_buffer.Video_Source = _vid_mode;
+    outgoing_buffer.ImSett_SD_OSD = _IR_palette_cmd;
     outgoing_buffer.Working_state = 0x78; 
     outgoing_buffer.checksum = outgoing_buffer.Header_1+
                                outgoing_buffer.Header_2+
                                outgoing_buffer.Address+
+                               outgoing_buffer.ImSett_SD_OSD+
                                outgoing_buffer.Working_state+
                                outgoing_buffer.Video_Source;  // on constructor already implemented headers and address
 
     PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 }
-
 
 // Update tracker
 void AP_Mount_QHPayload::PL_tracker()
@@ -259,7 +345,6 @@ float AP_Mount_QHPayload::PL_tracker_PID(float error)
 
     return output;
 }
-
 
 // Send command to QHPayload API
 void AP_Mount_QHPayload::PL_send_command(uint8_t* data, uint8_t size)
@@ -330,4 +415,85 @@ void AP_Mount_QHPayload::PL_read_incoming()
                 PL_parse_body();
         }
     }
+}
+
+// Set Ir clour palette. Note that is same comand as for video mode, so it is also sent
+void AP_Mount_QHPayload::PL_set_IRpalette()
+{
+    Type1_msg outgoing_buffer;
+
+    switch(_IR_palette) {
+        case Grayscale:
+            _IR_palette = PseudoFusion;
+            _IR_palette_cmd = 0x00;
+            break;
+        case PseudoFusion:
+            _IR_palette = IronOxide;
+            _IR_palette_cmd = 0x01;
+            break;
+        case IronOxide:
+            _IR_palette = Rainbow;
+            _IR_palette_cmd = 0x02;
+            break;
+        case Rainbow:
+            _IR_palette = Colorized;
+            _IR_palette_cmd = 0x03;
+            break;
+        case Colorized:
+            _IR_palette = Grayscale;
+            _IR_palette_cmd = 0x04;
+            break;
+    }
+
+    outgoing_buffer.Working_state = 0x78; 
+    outgoing_buffer.Video_Source = _vid_mode;
+    outgoing_buffer.ImSett_SD_OSD = _IR_palette_cmd;
+    outgoing_buffer.checksum = outgoing_buffer.Header_1+
+                               outgoing_buffer.Header_2+
+                               outgoing_buffer.Address+
+                               outgoing_buffer.Working_state+
+                               outgoing_buffer.Video_Source+
+                               outgoing_buffer.ImSett_SD_OSD;
+
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
+}
+
+// set eo defog
+void AP_Mount_QHPayload::PL_toggle_defog()
+{
+    EO_defog_msg outgoing_buffer;
+
+    if (_defog) {
+        _defog = false;
+        outgoing_buffer.Byte_5 = 0x03;
+
+    } else {
+        _defog = true;
+        outgoing_buffer.Byte_5 = 0x02;
+    }
+
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
+}
+
+// set eo electronic estabilization
+void AP_Mount_QHPayload::PL_toggle_estab()
+{
+    EO_estab_msg outgoing_buffer;
+
+    switch(_estab) {
+        case OFF:
+            _estab = ON;
+            outgoing_buffer.Byte_5 = 0x02;
+            break;
+        case ON:
+            _estab = HOLDING;
+            outgoing_buffer.Byte_5 = 0x00;
+            break;
+        case HOLDING:
+            _estab = OFF;
+            outgoing_buffer.Byte_5 = 0x03;
+            break;
+    }
+
+    PL_send_command((uint8_t *)&outgoing_buffer, sizeof(outgoing_buffer));
 }

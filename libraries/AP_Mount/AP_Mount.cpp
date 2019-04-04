@@ -225,6 +225,11 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
 
     AP_GROUPINFO("_T_kPmax", 27, AP_Mount, state[0]._kpmax, 0.006),
 
+    AP_GROUPINFO("_T_EOaux", 28, AP_Mount, state[0]._EOAux_ch, 5),
+
+    AP_GROUPINFO("_T_IRaux", 29, AP_Mount, state[0]._IRAux_ch, 6),
+
+
 #if AP_MOUNT_MAX_INSTANCES > 1
     // @Param: 2_DEFLT_MODE
     // @DisplayName: Mount default operating mode

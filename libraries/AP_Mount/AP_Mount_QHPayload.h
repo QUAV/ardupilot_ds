@@ -7,6 +7,7 @@
 // gcs().send_text(MAV_SEVERITY_CRITICAL, "RC VALUE: %5.3f", (double)zoom_visca_value);
 //--------------------------------------------------------------------------------------
 
+//#define IRLENS25 ENABLED
 
 class AP_Mount_QHPayload : public AP_Mount_Alexmos
 {
@@ -51,10 +52,24 @@ private:
     };
 
     enum VideoMode {
-        EO = 0,
-        IRplusEO = 1,
-        IR = 2,
-        EOplusIR = 3
+        EO = 1,
+        IRplusEO = 2,
+        IR = 3,
+        EOplusIR = 4
+    };
+
+    enum IRPalette {
+        Grayscale = 0,
+        PseudoFusion = 1,
+        IronOxide = 2,
+        Rainbow = 3,
+        Colorized = 4
+    };
+
+    enum Estab {
+        ON = 0,
+        OFF = 1,
+        HOLDING = 3
     };
 
     // Read rc functions
@@ -65,6 +80,18 @@ private:
 
     // Set zoom for Sony Camera
     void PL_set_EOzoom();
+
+    // Set zoom for IR Camera
+    void PL_set_IRzoom();
+
+    // Set palette for ir camera
+    void PL_set_IRpalette();
+
+    // Set EO defog
+    void PL_toggle_defog();
+
+    // Set EO e-stab
+    void PL_toggle_estab();
 
     // Update video source 
     void PL_vid_src();
@@ -79,7 +106,6 @@ private:
     float PL_tracker_PID(float error);
 
     // Serial related methods
-    void PL_write_params();
     void PL_send_command(uint8_t* data, uint8_t size);
     void PL_parse_body();
     void PL_read_incoming();
@@ -206,6 +232,25 @@ private:
         uint8_t Byte_9 = 0xFF;
     };
 
+    struct PACKED EO_defog_msg {
+        uint8_t Byte_1 = 0x81;
+        uint8_t Byte_2 = 0x01;
+        uint8_t Byte_3 = 0x04;
+        uint8_t Byte_4 = 0x37;
+        uint8_t Byte_5;       
+        uint8_t Byte_6 = 0x00;
+        uint8_t Byte_7 = 0xff;
+    };
+
+    struct PACKED EO_estab_msg {
+        uint8_t Byte_1 = 0x81;
+        uint8_t Byte_2 = 0x01;
+        uint8_t Byte_3 = 0x04;
+        uint8_t Byte_4 = 0x34;
+        uint8_t Byte_5;       
+        uint8_t Byte_6 = 0xFF;
+    };
+
     struct PACKED tracker_feedback_msg {
         int16_t X;
         int16_t Y;
@@ -221,6 +266,10 @@ private:
 
     bool _PL_initialised : 1;
     bool _track_high : 1;
+    bool _video_high : 1;
+    bool _video_low  : 1;
+    bool _EOaux_high : 1;
+    bool _EOaux_low  : 1;
     bool _track_msg_rdy : 1;
 
     uint8_t _PL_step;
@@ -229,11 +278,21 @@ private:
 
     RecordingState _rec_state;
     TrackingState _track_state;
+
     VideoMode _vid_mode;
+    uint8_t   _vid_mode_cmd;
+
+    IRPalette _IR_palette;
+    uint8_t   _IR_palette_cmd;
+
+    Estab _estab;
+    
+    bool _defog : 1;
 
     uint16_t _last_zoom_rc;
     uint16_t _last_vid_rc;
     uint16_t _last_rec_rc;
+    uint16_t _last_IRzoom_rc;
 
     int16_t _Track_X;
     int16_t _Track_Y;
@@ -241,6 +300,9 @@ private:
     float _kp;
 
     uint16_t _EOzoom;
+    uint8_t _IRzoom;
+    uint8_t _IRzoomprev;
+
 
     uint32_t _last_t;
 
