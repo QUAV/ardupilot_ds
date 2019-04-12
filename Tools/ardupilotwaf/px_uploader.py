@@ -75,11 +75,8 @@ default_ports = [ '/dev/serial/by-id/usb-Ardu*',
                   '/dev/serial/by-id/usb-*_3DR_*',
                   '/dev/serial/by-id/usb-Hex_Technology_Limited*',
                   '/dev/serial/by-id/usb-Hex_ProfiCNC*',
-<<<<<<< HEAD:Tools/ardupilotwaf/px_uploader.py
-=======
                   '/dev/serial/by-id/usb-Holybro*',
                   '/dev/serial/by-id/usb-mRo*',
->>>>>>> 564a82c5d... uploader.py: Add detection for mRo USB devices:Tools/scripts/uploader.py
                   '/dev/tty.usbmodem*']
 
 # Detect python version
