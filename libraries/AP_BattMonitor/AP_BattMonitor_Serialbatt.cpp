@@ -93,6 +93,8 @@ void AP_BattMonitor_Serialbatt::parse_body()
     _state.current_amps = _buffer.Batt_data.amps_batt;
     _state.generator_amps = _buffer.Batt_data.amps_gen;
     _state.rotor_amps = _buffer.Batt_data.amps_rot;
+    _state.fuel_level = _buffer.Batt_data.ml_fuel;
+    //_state. = _buffer.Batt_data.throttle;
 }
 
 

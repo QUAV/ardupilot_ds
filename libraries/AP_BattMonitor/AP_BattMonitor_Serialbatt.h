@@ -41,10 +41,12 @@ private:
 
     // Battery data structure
     struct PACKED Battery_Data {
-        int16_t Volts;
-        int16_t amps_batt;
-        int16_t amps_gen;
-        int16_t amps_rot;
+        int16_t  Volts;      // cents of volt
+        int16_t  amps_batt;  // tenths of ampere
+        int16_t  amps_gen;   // tenths of ampere
+        int16_t  amps_rot;   // tenths of ampere
+        uint16_t ml_fuel;   // mililiters
+        uint16_t pwm_throttle; // pwm 0-2000
     };
 
     // Used on parse_body. Made this way in case of future struct data aditions.

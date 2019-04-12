@@ -81,6 +81,7 @@ public:
         BatteryFailsafe failsafe;              // stage failsafe the battery is in
         bool        healthy;                   // battery monitor is communicating correctly
         float       generator_amps;            // Amps used for second current on Serialbatt
+        float       fuel_level;                // Generator fuel level in ml
         float       rotor_amps;
     };
 
