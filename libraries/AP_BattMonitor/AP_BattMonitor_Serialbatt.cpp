@@ -89,11 +89,11 @@ void AP_BattMonitor_Serialbatt::parse_body()
 {
     // TODO!! ofset, scalar, posible power consumption, etc
     // TODO!! to cope with several current readings, probably modify AP_Battmonitor.cpp methods calling backend getters.
-    _state.voltage = _buffer.Batt_data.Volts;
-    _state.current_amps = _buffer.Batt_data.amps_batt;
-    _state.generator_amps = _buffer.Batt_data.amps_gen;
-    _state.rotor_amps = _buffer.Batt_data.amps_rot;
-    _state.fuel_level = _buffer.Batt_data.ml_fuel;
+    _state.voltage         = 0.01f * (float)_buffer.Batt_data.Volts;
+    _state.current_amps   = 0.1f * (float)_buffer.Batt_data.amps_batt;
+    _state.generator_amps = 0.1f * (float)_buffer.Batt_data.amps_gen;
+    _state.rotor_amps = 0.1f * (float)_buffer.Batt_data.amps_rot;
+    _state.fuel_level = (float)_buffer.Batt_data.ml_fuel;
     //_state. = _buffer.Batt_data.throttle;
 }
 
