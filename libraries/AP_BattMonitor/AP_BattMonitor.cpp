@@ -277,7 +277,14 @@ float AP_BattMonitor::current_amps(uint8_t instance) const
 {
     if (instance < _num_instances) {
         return state[instance].current_amps;
-    } else if ( _params[instance].type() == AP_BattMonitor_Params::BattMonitor_TYPE_SerialBatt ) {
+    } else {
+        return 0.0f;
+    }
+}
+
+float AP_BattMonitor::generator_amps(uint8_t instance) const
+{
+    if (instance < _num_instances) {
         return state[instance].generator_amps;
     } else {
         return 0.0f;

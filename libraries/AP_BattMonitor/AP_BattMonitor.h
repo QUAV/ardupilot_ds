@@ -119,6 +119,9 @@ public:
     float current_amps(uint8_t instance) const;
     float current_amps() const { return current_amps(AP_BATT_PRIMARY_INSTANCE); }
 
+    float generator_amps(uint8_t instance) const;
+    float generator_amps() const { return generator_amps(AP_BATT_PRIMARY_INSTANCE); }
+
     /// consumed_mah - returns total current drawn since start-up in milliampere.hours
     float consumed_mah(uint8_t instance) const;
     float consumed_mah() const { return consumed_mah(AP_BATT_PRIMARY_INSTANCE); }
