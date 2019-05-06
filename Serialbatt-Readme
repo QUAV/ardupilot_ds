@@ -1,17 +1,81 @@
--------------- SerialBatt branch Readme -------------------
+-------------- SERIALBATT README-------- -------------------
 
-// TODO
+
+
+
+--------------- Setup --------------------------------------
+
+-Select on serial protocol option 19 on desired serial port (type of serial protocol)
+-Default baud rate is not set
+-Select monitor param, under batt monitor params, option 10 (type of battery monitor)
+
+------------------------------------------------------------
+
+
+
+
+-------------Version 1.1 Beta (5 May 2019)-----------------
+
+Added Mavlink message and handling method of current generator, plus some Debug code
+for simulating generator current with RC control.
+
+This version along with Qgroundcontrol QH-Dev branch of this date has the new 
+current_generator Mavlink message fully functional both in Ardupilot and QgroundControl.
+
+Some cleanup needed. Eliminate Debug messages needed.
+
+-----------------------------------------------------------
+
+
+
+
+--------------Version 1.0 Beta (March 2019)----------------
+
+Voltage and current from monitor1 fully supported. Second current, generator current, just supported for visualization. No logging and no consumed amps, etc etc. 
+Need to modify all battmonitor front end architecture for that regard.
+
+-----------------------------------------------------------
+
+
+
+---------------------------- TODO --------------------------
+
+SHORT THERM: ESTO ES PARA DIEGO!!!!
+
+-Incorporar en Serialbatt todos los mensajes de governor concebidos para el 2.1, que serian:
+		
+		-Voltage bateria 			mV			(ya incluido en arduipilot)
+		-Corriente bateria 			dA			(ya incluido en ardupilot)
+		-corriente generador 		dA			(incluido en este branch)
+		-corriente rotor 			dA			(a implementar)
+		-fuel level 				mL			(a implementar)
+		-mando gas					%100		(a implementar)
+
+-Implementarlos en BAttMonitorState en caso de que no esten ya implementados. Aqui es donde se guarda todos los valoeres
+relativos al estado del sensor de la bateria
+
+-Implementar la lectura y parsing en read_incoming method en caso de no estar implementado, tambien parse_body()
+
+-En este punto ya estaria implementado en el backend de Battmonitor. ahora toca implementar los metodos en el front end, 
+en BattMonitor. Aqui deberemos implementar los metodos "getter" para los valores nuevos implementados.
+
+-Una vez implementados los metodos "getter" en el front end (AP_Battmonitor.cpp/h) implementamos el envio de los valores por mavlink. En la libreria GCS_Common, en el metodo send_battery_status.
+
+-Una vez implementado todo en ardupilot, añadimos los valores nuevos a la librería mavlink como tal. añadismo los valores
+en common.xml en battery_status group. Al compilar ardupilot se deberia compilar tambien mavlink.
+
+-Y ya estaria!
+
+--------------------------------------------------------------
+
+
+
+
+
+LONG THERM:
 
 -AP_SerialManager currently supports a public method for retrieving the singleton instance. 
 It would be nice to do it that way. Right now is the old way, delivering serial_manager to the argument on init()
 
 -Probably there will be needed some tweaks on the serialmanager regarding baud rate. Remember
 
-// Setup
-
--Select on serial protocol option 19 on desired serial port (type of serial protocol)
--Default baud rate is not set
--Select monitor param, under batt monitor params, option 10 (type of battery monitor)
-
-Voltage and current from monitor1 fully supported. Second current, generator current, just supported for visualization. No logging and no consumed amps, etc etc. 
-Need to modify all battmonitor front end architecture for that regard.
