@@ -83,7 +83,7 @@ public:
         float       generator_amps;            // Amps used for second current on Serialbatt
         float       fuel_level;                // Generator fuel level in ml
         float       rotor_amps;
-        float       gas_percent;               //Percentage of throtle input
+        float       gas_percent;               //Percentage of throttle input
     };
 
     // Return the number of battery monitor instances
