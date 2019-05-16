@@ -3,6 +3,9 @@
 #include <AP_Math/AP_Math.h>
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Serialbatt.h"
+//--------------------DEBUG------------------
+#include <RC_Channel/RC_Channel.h>
+//-------------------------------------------
 
 extern const AP_HAL::HAL& hal;
 
@@ -39,7 +42,7 @@ void AP_BattMonitor_Serialbatt::read()
         return;
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO, "numc %5.3f", (double)_port->available());
+    //gcs().send_text(MAV_SEVERITY_INFO, "numc %5.3f", (double)_port->available());
 
     // Request next message
     _port->write((const uint8_t*)"+>", 2);
@@ -48,9 +51,13 @@ void AP_BattMonitor_Serialbatt::read()
         
         _state.healthy = true;
 
+        /*---------------DEBUG----------------
         gcs().send_text(MAV_SEVERITY_INFO, "Volts: %5.3f Amps_batt: %5.3f", (double)_state.voltage, (double)_state.current_amps);
 
         gcs().send_text(MAV_SEVERITY_INFO, "Amps_gen: %5.3f Amps_rot: %5.3f", (double)_state.generator_amps, (double)_state.rotor_amps);
+
+        gcs().send_text(MAV_SEVERITY_INFO, "ml_tank: %5.3f Per_thr: %d", (double)_state.fuel_level, (double)_state.gas_percent);
+        --------------------------------------*/
         
         uint32_t tnow = AP_HAL::micros();
         float dt = tnow - _state.last_time_micros;
@@ -69,6 +76,20 @@ void AP_BattMonitor_Serialbatt::read()
         return;
     }
 
+    //--------------DEBUG-------------
+
+
+    _state.generator_amps = RC_Channels::get_radio_in(0)*0.01f;
+    _state.rotor_amps = RC_Channels::get_radio_in(0)*0.01f;
+    _state.fuel_level = RC_Channels::get_radio_in(0);
+    _state.gas_percent = RC_Channels::get_radio_in(0)/20;
+
+    gcs().send_text(MAV_SEVERITY_INFO, "Amps_gen: %5.3f Amps_rot: %5.3f", (double)_state.generator_amps, (double)_state.rotor_amps);
+    
+    gcs().send_text(MAV_SEVERITY_INFO, "ml_tank: %5.3f Per_thr: %d", (double)_state.fuel_level, (double)_state.gas_percent);
+
+
+    /*--------------DEBUG-------------
     if (AP_HAL::millis() - _last_reading_ms > 2000) {
 
         gcs().send_text(MAV_SEVERITY_INFO, "TIME SINCE LAST READING %5.3f", (double)(AP_HAL::millis() - _last_reading_ms));
@@ -79,7 +100,11 @@ void AP_BattMonitor_Serialbatt::read()
         _state.current_amps = 0;
         _state.generator_amps = 0;
         _state.rotor_amps = 0;
+        _state.fuel_level = 0;
+        _state.gas_percent = 0;
+
     }
+    --------------------------------*/
 }
 
 
@@ -94,7 +119,7 @@ void AP_BattMonitor_Serialbatt::parse_body()
     _state.generator_amps = 0.1f * (float)_buffer.Batt_data.amps_gen;
     _state.rotor_amps = 0.1f * (float)_buffer.Batt_data.amps_rot;
     _state.fuel_level = (float)_buffer.Batt_data.ml_fuel;
-    //_state. = _buffer.Batt_data.throttle;
+    _state.gas_percent = (float)_buffer.Batt_data.pwm_throttle;
 }
 
 
