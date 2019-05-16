@@ -83,7 +83,11 @@ public:
         float       generator_amps;            // Amps used for second current on Serialbatt
         float       fuel_level;                // Generator fuel level in ml
         float       rotor_amps;
+<<<<<<< HEAD
         float       gas_percent;               //Percentage of throttle input
+=======
+        float       gas_percent;               //Percentage of throtle input
+>>>>>>> 74e626c61ca47f0b5be50fe548850e8ebc189b67
     };
 
     // Return the number of battery monitor instances
@@ -132,7 +136,11 @@ public:
     float fuel_level(uint8_t instance) const;
     float fuel_level() const { return fuel_level(AP_BATT_PRIMARY_INSTANCE); }
 
+<<<<<<< HEAD
     /// gas_percent - returns current percentage of throttle being sent to the motor
+=======
+    /// gas_percent - returns current fuel level in the tank
+>>>>>>> 74e626c61ca47f0b5be50fe548850e8ebc189b67
     float gas_percent(uint8_t instance) const;
     float gas_percent() const { return gas_percent(AP_BATT_PRIMARY_INSTANCE); }
 
