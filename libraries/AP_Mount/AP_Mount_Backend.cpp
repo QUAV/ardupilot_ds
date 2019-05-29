@@ -89,7 +89,7 @@ void AP_Mount_Backend::rate_input_rad(float &out, const RC_Channel *chan, float 
 }
 
 // update_targets_from_rc - updates angle targets using input from receiver
-void AP_Mount_Backend::update_targets_from_rc()
+void AP_Mount_Backend::update_targets_from_rc(bool do_wrap_yaw)
 {
     const RC_Channel *roll_ch = rc().channel(_state._roll_rc_in - 1);
     const RC_Channel *tilt_ch = rc().channel(_state._tilt_rc_in - 1);
@@ -110,6 +110,18 @@ void AP_Mount_Backend::update_targets_from_rc()
                        pan_ch,
                        _state._pan_angle_min,
                        _state._pan_angle_max);
+
+//------------------------ESTO ES CLAVE, HAY QUE MIRARLO----------------------
+/* 
+            if (do_wrap_yaw) {
+                _angle_ef_target_rad.z = wrap_PI(_angle_ef_target_rad.z);
+            } else {
+                _angle_ef_target_rad.z = constrain_float(_angle_ef_target_rad.z,
+                                                         radians(_state._pan_angle_min*0.01f),
+                                                         radians(_state._pan_angle_max*0.01f));                
+            }
+ */
+
     } else {
         // allow pilot rate input to come directly from an RC_Channel
         if ((roll_ch != nullptr) && (roll_ch->get_radio_in() != 0)) {

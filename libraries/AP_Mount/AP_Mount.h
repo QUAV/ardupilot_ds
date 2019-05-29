@@ -55,7 +55,7 @@ class AP_Mount
     friend class AP_Mount_SToRM32_serial;
 
 public:
-    AP_Mount(const struct Location &current_loc);
+    AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc);
 
     /* Do not allow copies */
     AP_Mount(const AP_Mount &other) = delete;
@@ -126,6 +126,9 @@ public:
     // send a MOUNT_STATUS message to GCS:
     void send_mount_status(mavlink_channel_t chan);
 
+    // mount IMU helper mode
+    void trigger_imu_helper(uint8_t mntCal);
+
     // parameter var table
     static const struct AP_Param::GroupInfo        var_info[];
 
@@ -135,6 +138,7 @@ protected:
 
     // private members
     const struct Location   &_current_loc;  // reference to the vehicle's current location
+    const AP_AHRS_TYPE      &_ahrs;         // reference to the vehicle's ahrs
 
     // frontend parameters
     AP_Int8             _joystick_speed;    // joystick gain
@@ -174,6 +178,10 @@ protected:
 
         MAV_MOUNT_MODE  _mode;              // current mode (see MAV_MOUNT_MODE enum)
         struct Location _roi_target;        // roi target location
+
+        AP_Int8         _ahrs_helper;
+
+        
     } state[AP_MOUNT_MAX_INSTANCES];
 
 private:

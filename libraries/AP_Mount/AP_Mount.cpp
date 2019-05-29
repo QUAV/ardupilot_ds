@@ -198,6 +198,8 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_TYPE", 19, AP_Mount, state[0]._type, 0),
 
+    AP_GROUPINFO("_AHRS_HLP", 20, AP_Mount, state[0]._ahrs_helper, 0),
+
     // 20 formerly _OFF_JNT
 
     // 21 formerly _OFF_ACC
@@ -393,7 +395,8 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
     AP_GROUPEND
 };
 
-AP_Mount::AP_Mount(const struct Location &current_loc) :
+AP_Mount::AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc) :
+    _ahrs(ahrs),
     _current_loc(current_loc)
 {
     if (_singleton != nullptr) {
@@ -693,6 +696,13 @@ void AP_Mount::send_gimbal_report(mavlink_channel_t chan)
             _backends[instance]->send_gimbal_report(chan);
         }
     }    
+}
+
+void AP_Mount::trigger_imu_helper(uint8_t mntCal)
+{
+    if (_backends[0] != NULL) {
+        _backends[0]->trigger_imu_helper(mntCal);
+    }
 }
 
 

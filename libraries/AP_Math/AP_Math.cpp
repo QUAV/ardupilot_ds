@@ -149,6 +149,33 @@ template auto wrap_360_cd<short>(const short angle) -> decltype(wrap_360(angle, 
 template auto wrap_360_cd<double>(const double angle) -> decltype(wrap_360(angle, 100.f));
 
 template <typename T>
+float wrap_2x720(const T angle, float unit_mod)
+{
+    const float ang_1440 = 4.f * 360.f * unit_mod;
+    const float ang_720 = 2.f * 360.f * unit_mod;
+    float res = fmodf(static_cast<float>(angle), ang_1440);
+    if (res >= ang_720) { res -= ang_1440; }
+    if (res < -ang_720) { res += ang_1440; }
+    return res;   
+}
+
+template float wrap_2x720<int>(const int angle, float unit_mod);
+template float wrap_2x720<short>(const short angle, float unit_mod);
+template float wrap_2x720<float>(const float angle, float unit_mod);
+template float wrap_2x720<double>(const double angle, float unit_mod);
+
+template <typename T>
+auto wrap_2x720_cd(const T angle) -> decltype(wrap_2x720(angle, 100.f))
+{
+    return wrap_2x720(angle, 100.f);
+}
+
+template auto wrap_2x720_cd<int>(const int angle) -> decltype(wrap_2x720(angle, 100.f));
+template auto wrap_2x720_cd<short>(const short angle) -> decltype(wrap_2x720(angle, 100.f));
+template auto wrap_2x720_cd<float>(const float angle) -> decltype(wrap_2x720(angle, 100.f));
+template auto wrap_2x720_cd<double>(const double angle) -> decltype(wrap_2x720(angle, 100.f));
+
+template <typename T>
 float wrap_PI(const T radian)
 {
     auto res = wrap_2PI(radian);
