@@ -1,11 +1,5 @@
 #include "AP_BattMonitor.h"
-#include "AP_BattMonitor_Analog.h"
-#include "AP_BattMonitor_SMBus.h"
-#include "AP_BattMonitor_Bebop.h"
-#include "AP_BattMonitor_BLHeliESC.h"
-#if HAL_WITH_UAVCAN
-#include "AP_BattMonitor_UAVCAN.h"
-#endif
+#include "AP_BattMonitor_Gov.h"
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <DataFlash/DataFlash.h>
 #include <GCS_MAVLink/GCS.h>
@@ -48,7 +42,7 @@ AP_BattMonitor::AP_BattMonitor(uint32_t log_battery_bit, battery_failsafe_handle
 
 // init - instantiate the battery monitors
 void
-AP_BattMonitor::init()
+AP_BattMonitor::init(const AP_SerialManager& serial_manager)
 {
     // check init has not been called before
     if (_num_instances != 0) {
@@ -57,53 +51,17 @@ AP_BattMonitor::init()
 
     _highest_failsafe_priority = INT8_MAX;
 
-    convert_params();
-
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP || CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO
-    // force monitor for bebop
-    _params[0]._type.set(AP_BattMonitor_Params::BattMonitor_TYPE_BEBOP);
-#endif
-
     // create each instance
     for (uint8_t instance=0; instance<AP_BATT_MONITOR_MAX_INSTANCES; instance++) {
         // clear out the cell voltages
         memset(&state[instance].cell_voltages, 0xFF, sizeof(cells));
 
         switch (get_type(instance)) {
-            case AP_BattMonitor_Params::BattMonitor_TYPE_ANALOG_VOLTAGE_ONLY:
-            case AP_BattMonitor_Params::BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT:
-                drivers[instance] = new AP_BattMonitor_Analog(*this, state[instance], _params[instance]);
+
+            case AP_BattMonitor_Params::BattMonitor_TYPE_GOV:
+                drivers[instance] = new AP_BattMonitor_Gov(*this, state[instance], _params[instance]);
                 _num_instances++;
-                break;
-            case AP_BattMonitor_Params::BattMonitor_TYPE_SOLO:
-                drivers[instance] = new AP_BattMonitor_SMBus_Solo(*this, state[instance], _params[instance],
-                                                                  hal.i2c_mgr->get_device(AP_BATTMONITOR_SMBUS_BUS_INTERNAL, AP_BATTMONITOR_SMBUS_I2C_ADDR,
-                                                                                          100000, true, 20));
-                _num_instances++;
-                break;
-            case AP_BattMonitor_Params::BattMonitor_TYPE_MAXELL:
-                drivers[instance] = new AP_BattMonitor_SMBus_Maxell(*this, state[instance], _params[instance],
-                                                                    hal.i2c_mgr->get_device(AP_BATTMONITOR_SMBUS_BUS_EXTERNAL, AP_BATTMONITOR_SMBUS_I2C_ADDR,
-                                                                                            100000, true, 20));
-                _num_instances++;
-                break;
-            case AP_BattMonitor_Params::BattMonitor_TYPE_BEBOP:
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP || CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO
-                drivers[instance] = new AP_BattMonitor_Bebop(*this, state[instance], _params[instance]);
-                _num_instances++;
-#endif
-                break;
-            case AP_BattMonitor_Params::BattMonitor_TYPE_UAVCAN_BatteryInfo:
-#if HAL_WITH_UAVCAN
-                drivers[instance] = new AP_BattMonitor_UAVCAN(*this, state[instance], AP_BattMonitor_UAVCAN::UAVCAN_BATTERY_INFO, _params[instance]);
-                _num_instances++;
-#endif
-                break;
-            case AP_BattMonitor_Params::BattMonitor_TYPE_BLHeliESC:
-#ifdef HAVE_AP_BLHELI_SUPPORT
-                drivers[instance] = new AP_BattMonitor_BLHeliESC(*this, state[instance], _params[instance]);
-                _num_instances++;
-#endif
+                
                 break;
             case AP_BattMonitor_Params::BattMonitor_TYPE_NONE:
             default:
@@ -112,81 +70,9 @@ AP_BattMonitor::init()
 
         // call init function for each backend
         if (drivers[instance] != nullptr) {
-            drivers[instance]->init();
+            drivers[instance]->init(serial_manager);
         }
     }
-}
-
-void AP_BattMonitor::convert_params(void) {
-    if (_params[0]._type.configured_in_storage()) {
-        // _params[0]._type will always be configured in storage after conversion is done the first time
-        return;
-    }
-
-    #define SECOND_BATT_CONVERT_MASK 0x80
-    const struct ConversionTable {
-        uint8_t old_element;
-        uint8_t new_index; // upper bit used to indicate if its the first or second instance
-    }conversionTable[22] = {
-        { 0,                             0 }, // _MONITOR
-        { 1,                             1 }, // _VOLT_PIN
-        { 2,                             2 }, // _CURR_PIN
-        { 3,                             3 }, // _VOLT_MULT
-        { 4,                             4 }, // _AMP_PERVOLT
-        { 5,                             5 }, // _AMP_OFFSET
-        { 6,                             6 }, // _CAPACITY
-        { 9,                             7 }, // _WATT_MAX
-        {10,                             8 }, // _SERIAL_NUM
-        {11, (SECOND_BATT_CONVERT_MASK | 0)}, // 2_MONITOR
-        {12, (SECOND_BATT_CONVERT_MASK | 1)}, // 2_VOLT_PIN
-        {13, (SECOND_BATT_CONVERT_MASK | 2)}, // 2_CURR_PIN
-        {14, (SECOND_BATT_CONVERT_MASK | 3)}, // 2_VOLT_MULT
-        {15, (SECOND_BATT_CONVERT_MASK | 4)}, // 2_AMP_PERVOLT
-        {16, (SECOND_BATT_CONVERT_MASK | 5)}, // 2_AMP_OFFSET
-        {17, (SECOND_BATT_CONVERT_MASK | 6)}, // 2_CAPACITY
-        {18, (SECOND_BATT_CONVERT_MASK | 7)}, // 2_WATT_MAX
-        {20, (SECOND_BATT_CONVERT_MASK | 8)}, // 2_SERIAL_NUM
-        {21,                             9 }, // _LOW_TIMER
-        {22,                            10 }, // _LOW_TYPE
-        {21, (SECOND_BATT_CONVERT_MASK | 9)}, // 2_LOW_TIMER
-        {22, (SECOND_BATT_CONVERT_MASK |10)}, // 2_LOW_TYPE
-    };
-
-
-    char param_name[17];
-    AP_Param::ConversionInfo info;
-    info.new_name = param_name;
-
-#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-    info.old_key = 166;
-#elif APM_BUILD_TYPE(APM_BUILD_ArduCopter)
-    info.old_key = 36;
-#elif APM_BUILD_TYPE(APM_BUILD_ArduSub)
-    info.old_key = 33;
-#elif APM_BUILD_TYPE(APM_BUILD_APMrover2)
-    info.old_key = 145;
-#else
-    _params[0]._type.save(true);
-    return; // no conversion is supported on this platform
-#endif
-
-    for (uint8_t i = 0; i < ARRAY_SIZE(conversionTable); i++) {
-        uint8_t param_instance = conversionTable[i].new_index >> 7;
-        uint8_t destination_index = 0x7F & conversionTable[i].new_index;
-
-        info.old_group_element = conversionTable[i].old_element;
-        info.type = (ap_var_type)AP_BattMonitor_Params::var_info[destination_index].type;
-        if (param_instance) {
-            hal.util->snprintf(param_name, 17, "BATT2_%s", AP_BattMonitor_Params::var_info[destination_index].name);
-        } else {
-            hal.util->snprintf(param_name, 17, "BATT_%s", AP_BattMonitor_Params::var_info[destination_index].name);
-        }
-
-        AP_Param::convert_old_parameter(&info, 1.0f, 0);
-    }
-
-    // force _params[0]._type into storage to flag that conversion has been done
-    _params[0]._type.save(true);
 }
 
 // read - read the voltage and current for all instances
@@ -263,9 +149,50 @@ float AP_BattMonitor::voltage_resting_estimate(uint8_t instance) const
 }
 
 /// current_amps - returns the instantaneous current draw in amperes
-float AP_BattMonitor::current_amps(uint8_t instance) const {
+float AP_BattMonitor::current_amps(uint8_t instance) const 
+{
     if (instance < _num_instances) {
         return state[instance].current_amps;
+    } else {
+        return 0.0f;
+    }
+}
+
+/// generator_amps - returns the current generated by motor
+float AP_BattMonitor::generator_amps(uint8_t instance) const
+{
+    if (instance < _num_instances) {
+        return state[instance].generator_amps;
+    } else {
+        return 0.0f;
+    }
+}
+
+/// rotor_amps - 
+float AP_BattMonitor::rotor_amps(uint8_t instance) const
+{
+    if (instance < _num_instances) {
+        return state[instance].rotor_amps;
+    } else {
+        return 0.0f;
+    }
+}
+
+/// fuel_level - returns current fuel level in the tank
+float AP_BattMonitor::fuel_level(uint8_t instance) const
+{
+    if (instance < _num_instances) {
+        return state[instance].fuel_level;
+    } else {
+        return 0.0f;
+    }
+}
+
+/// gas_percent - returns current percentage of throttle being sent to the motor
+float AP_BattMonitor::gas_percent(uint8_t instance) const
+{
+    if (instance < _num_instances) {
+        return state[instance].gas_percent;
     } else {
         return 0.0f;
     }
@@ -424,29 +351,6 @@ AP_BattMonitor::BatteryFailsafe AP_BattMonitor::check_failsafe(const uint8_t ins
 
     // if we've gotten this far then battery is ok
     return BatteryFailsafe_None;
-}
-
-// return true if any battery is pushing too much power
-bool AP_BattMonitor::overpower_detected() const
-{
-    bool result = false;
-    for (uint8_t instance = 0; instance < _num_instances; instance++) {
-        result |= overpower_detected(instance);
-    }
-    return result;
-}
-
-bool AP_BattMonitor::overpower_detected(uint8_t instance) const
-{
-#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-    if (instance < _num_instances && _params[instance]._watt_max > 0) {
-        float power = state[instance].current_amps * state[instance].voltage;
-        return state[instance].healthy && (power > _params[instance]._watt_max);
-    }
-    return false;
-#else
-    return false;
-#endif
 }
 
 bool AP_BattMonitor::has_cell_voltages(const uint8_t instance) const
