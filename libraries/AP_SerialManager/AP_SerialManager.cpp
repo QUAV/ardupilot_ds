@@ -271,6 +271,12 @@ void AP_SerialManager::init()
                     state[i].uart->begin(map_baudrate(state[i].baud), 30, 30);
                     state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
                     break;
+
+                case SerialProtocol_Gov:
+                    // Serial protocol for battery monitor on QH. baud hardcoded to 57600
+                    state[i].baud = 57600;
+                    state[i].uart->begin(map_baudrate(state[i].baud), 32, 32);
+                    break;
             }
         }
     }
