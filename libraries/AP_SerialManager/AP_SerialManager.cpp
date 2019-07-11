@@ -282,6 +282,17 @@ void AP_SerialManager::init()
                     state[i].uart->set_stop_bits(1);
                     state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
                     break;
+
+                case SerialProtocol_QHAP:
+                    // QHPayload serial conection to main autopilot
+                    state[i].baud = AP_SERIALMANAGER_QHAP_BAUD / 1000;
+                    state[i].uart->begin(AP_SERIALMANAGER_QHAP_BAUD,
+                                         AP_SERIALMANAGER_QHAP_RX,
+                                         AP_SERIALMANAGER_QHAP_TX);
+                    state[i].uart->configure_parity(0);
+                    state[i].uart->set_stop_bits(1);
+                    state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+                    break;
             }
         }
     }

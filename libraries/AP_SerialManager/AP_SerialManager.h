@@ -77,6 +77,10 @@
 #define AP_SERIALMANAGER_QHPAYLOAD_RX           256
 #define AP_SERIALMANAGER_QHPAYLOAD_TX           256
 
+#define AP_SERIALMANAGER_QHAP_BAUD         115200
+#define AP_SERIALMANAGER_QHAP_RX           256
+#define AP_SERIALMANAGER_QHAP_TX           256
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -106,6 +110,7 @@ public:
         SerialProtocol_ESCTelemetry = 16,
         SerialProtocol_Devo_Telem = 17,
         SerialProtocol_QHPayload = 18,
+        SerialProtocol_QHAP = 19
     };
 
     // get singleton instance
