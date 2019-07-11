@@ -11,7 +11,7 @@ void AP_Mount_Backend::set_angle_targets(float roll, float tilt, float pan)
     _angle_ef_target_rad.z = radians(pan);
 
     // set the mode to mavlink targeting
-    _frontend.set_mode(_instance, MAV_MOUNT_MODE_MAVLINK_TARGETING);
+    _frontend.set_mode(MAV_MOUNT_MODE_MAVLINK_TARGETING);
 }
 
 // set_roi_target - sets target location that mount should attempt to point towards
@@ -21,7 +21,7 @@ void AP_Mount_Backend::set_roi_target(const struct Location &target_loc)
     _state._roi_target = target_loc;
 
     // set the mode to GPS tracking mode
-    _frontend.set_mode(_instance, MAV_MOUNT_MODE_GPS_POINT);
+    _frontend.set_mode(MAV_MOUNT_MODE_GPS_POINT);
 }
 
 // configure_msg - process MOUNT_CONFIGURE messages received from GCS.  deprecated.
@@ -44,10 +44,10 @@ void AP_Mount_Backend::control_msg(mavlink_message_t *msg)
 
 void AP_Mount_Backend::control(int32_t pitch_or_lat, int32_t roll_or_lon, int32_t yaw_or_alt, MAV_MOUNT_MODE mount_mode)
 {
-    _frontend.set_mode(_instance, mount_mode);
+    _frontend.set_mode(mount_mode);
 
     // interpret message fields based on mode
-    switch (_frontend.get_mode(_instance)) {
+    switch (_frontend.get_mode()) {
         case MAV_MOUNT_MODE_RETRACT:
         case MAV_MOUNT_MODE_NEUTRAL:
             // do nothing with request if mount is retracted or in neutral position

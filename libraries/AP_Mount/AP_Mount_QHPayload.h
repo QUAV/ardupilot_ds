@@ -13,8 +13,8 @@ class AP_Mount_QHPayload : public AP_Mount_Alexmos
 {
 public:
     //constructor
-    AP_Mount_QHPayload(AP_Mount &frontend, AP_Mount::mount_state &state, uint8_t instance):
-        AP_Mount_Alexmos(frontend, state, instance),
+    AP_Mount_QHPayload(AP_Mount &frontend, AP_Mount::mount_state &state):
+        AP_Mount_Alexmos(frontend, state),
         _PL_port(nullptr),
         _PL_initialised(false),
         _track_msg_rdy(false),

@@ -61,12 +61,6 @@ void AP_Mount_Alexmos::update()
     }
 }
 
-// has_pan_control - returns true if this mount can control it's pan (required for multicopters)
-bool AP_Mount_Alexmos::has_pan_control() const
-{
-    return _gimbal_3axis;
-}
-
 // set_mode - sets mount's mode
 void AP_Mount_Alexmos::set_mode(enum MAV_MOUNT_MODE mode)
 {

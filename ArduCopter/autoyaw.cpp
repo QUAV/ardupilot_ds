@@ -144,11 +144,6 @@ void Copter::Mode::AutoYaw::set_roi(const Location &roi_location)
 #endif  // MOUNT == ENABLED
     } else {
 #if MOUNT == ENABLED
-        // check if mount type requires us to rotate the quad
-        if (!copter.camera_mount.has_pan_control()) {
-            roi = copter.pv_location_to_vector(roi_location);
-            auto_yaw.set_mode(AUTO_YAW_ROI);
-        }
         // send the command to the camera mount
         copter.camera_mount.set_roi_target(roi_location);
 

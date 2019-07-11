@@ -28,10 +28,9 @@ class AP_Mount_Backend
 {
 public:
     // Constructor
-    AP_Mount_Backend(AP_Mount &frontend, AP_Mount::mount_state& state, uint8_t instance) :
+    AP_Mount_Backend(AP_Mount &frontend, AP_Mount::mount_state& state) :
         _frontend(frontend),
-        _state(state),
-        _instance(instance)
+        _state(state)
     {}
 
     // Virtual destructor
@@ -45,9 +44,6 @@ public:
 
     // used for gimbals that need to read INS data at full rate
     virtual void update_fast() {}
-
-    // has_pan_control - returns true if this mount can control it's pan (required for multicopters)
-    virtual bool has_pan_control() const = 0;
 
     // set_mode - sets mount's mode
     virtual void set_mode(enum MAV_MOUNT_MODE mode) = 0;
@@ -92,7 +88,7 @@ protected:
     void calc_angle_to_location(const struct Location &target, Vector3f& angles_to_target_rad, bool calc_tilt, bool calc_pan, bool relative_pan = true);
 
     // get the mount mode from frontend
-    MAV_MOUNT_MODE get_mode(void) const { return _frontend.get_mode(_instance); }
+    MAV_MOUNT_MODE get_mode(void) const { return _frontend.get_mode(); }
 
     AP_Mount    &_frontend; // reference to the front end which holds parameters
     AP_Mount::mount_state &_state;    // references to the parameters and state for this backend

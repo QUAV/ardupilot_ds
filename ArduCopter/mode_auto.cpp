@@ -1376,9 +1376,6 @@ void Copter::ModeAuto::do_roi(const AP_Mission::Mission_Command& cmd)
 void Copter::ModeAuto::do_mount_control(const AP_Mission::Mission_Command& cmd)
 {
 #if MOUNT == ENABLED
-    if (!copter.camera_mount.has_pan_control()) {
-        auto_yaw.set_fixed_yaw(cmd.content.mount_control.yaw,0.0f,0,0);
-    }
     copter.camera_mount.set_angle_targets(cmd.content.mount_control.roll, cmd.content.mount_control.pitch, cmd.content.mount_control.yaw);
 #endif
 }

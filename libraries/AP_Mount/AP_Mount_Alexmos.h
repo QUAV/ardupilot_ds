@@ -69,14 +69,14 @@ class AP_Mount_Alexmos : public AP_Mount_Backend
 {
 public:
     //constructor
-    AP_Mount_Alexmos(AP_Mount &frontend, AP_Mount::mount_state &state, uint8_t instance):
-        AP_Mount_Backend(frontend, state, instance),
+    AP_Mount_Alexmos(AP_Mount &frontend, AP_Mount::mount_state &state):
+        AP_Mount_Backend(frontend, state),
         _port(nullptr),
         _initialised(false),
         _board_version(0),
         _current_firmware_version(0.0f),
         _firmware_beta_version(0),
-        _gimbal_3axis(false),
+        _gimbal_3axis(true),
         _gimbal_bat_monitoring(false),
         _current_angle(0,0,0),
         _param_read_once(false),
@@ -93,9 +93,6 @@ public:
 
     // update mount position - should be called periodically
     virtual void update();
-
-    // has_pan_control - returns true if this mount can control it's pan (required for multicopters)
-    virtual bool has_pan_control() const;
 
     // set_mode - sets mount's mode
     virtual void set_mode(enum MAV_MOUNT_MODE mode) ;
@@ -322,7 +319,6 @@ private:
     uint8_t _board_version;
     float _current_firmware_version;
     uint8_t _firmware_beta_version;
-    bool _gimbal_3axis : 1;
     bool _gimbal_bat_monitoring : 1;
 
     // keep the last _current_angle values
@@ -332,6 +328,7 @@ private:
 
     // CMD_READ_PARAMS has been called once
     bool _param_read_once : 1;
+    bool _gimbal_3axis : 1;
 
     // Serial Protocol Variables
     uint8_t _checksum;
@@ -339,6 +336,7 @@ private:
     uint8_t _command_id;
     uint8_t _payload_length;
     uint8_t _payload_counter;
+
 
     // confirmed that last command was ok
     bool _last_command_confirmed : 1;
