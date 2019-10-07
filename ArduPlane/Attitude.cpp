@@ -745,3 +745,12 @@ void Plane::update_load_factor(void)
         roll_limit_cd = constrain_int32(roll_limit_cd, -roll_limit, roll_limit);
     }    
 }
+
+// rotate vector from vehicle's perspective to North-East frame
+void Plane::rotate_body_frame_to_NE(float &x, float &y)
+{
+    float ne_x = x*ahrs.cos_yaw() - y*ahrs.sin_yaw();
+    float ne_y = x*ahrs.sin_yaw() + y*ahrs.cos_yaw();
+    x = ne_x;
+    y = ne_y;
+}
