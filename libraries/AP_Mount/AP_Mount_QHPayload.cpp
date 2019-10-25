@@ -77,7 +77,7 @@ void AP_Mount_QHPayload::PL_check_rc()
         
         _EOzoom = (1000-rc_val)*16.384;
 
-        gcs().send_text(MAV_SEVERITY_INFO, "EOzoom: %5.3f", (double)_EOzoom);
+        // gcs().send_text(MAV_SEVERITY_INFO, "EOzoom: %5.3f", (double)_EOzoom);
 
         PL_set_EOzoom();
     }

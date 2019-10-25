@@ -19,7 +19,7 @@ void AP_Mount_Alexmos::update()
         return;
     }
 
-    get_angles();
+    //get_angles();
     read_incoming(); // read the incoming messages from the gimbal
 
     // update based on mount mode
