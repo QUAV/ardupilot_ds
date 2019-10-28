@@ -2084,6 +2084,9 @@ void QuadPlane::control_auto(const Location &loc)
     case MAV_CMD_NAV_LOITER_TO_ALT:
         vtol_position_controller();
         break;
+    case MAV_CMD_NAV_GUIDED_ENABLE:
+        vel_control_run();
+        break;
     default:
         waypoint_controller();
         break;
@@ -2504,6 +2507,8 @@ void QuadPlane::guided_update(void)
         throttle_wait = false;
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
         takeoff_controller();
+    } else if (in_guided_velocity()) {
+        vel_control_run();
     } else {
         guided_takeoff = false;
         // run VTOL position controller
@@ -2714,4 +2719,76 @@ bool QuadPlane::in_vtol_land_descent(void) const
         return true;
     }
     return false;
+}
+
+#define GUIDED_POSVEL_TIMEOUT_MS    3000    // vtol guided mode's position-velocity controller times out after 3seconds with no new updates
+
+void QuadPlane::vel_control_run(void)
+{
+    // set motors to full range
+    motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
+
+    // set velocity to zero and stop rotating if no updates received for 3 seconds
+    uint32_t tnow = millis();
+    if (tnow - vel_update_time_ms > GUIDED_POSVEL_TIMEOUT_MS) {
+        pos_control->set_desired_velocity(Vector3f(0.0f, 0.0f, 0.0f));
+        guided_desired_yaw_rate_cds = 0.0f;
+        _in_guided_velocity = false;
+        // avoid guided to come to initial pos
+        plane.guided_WP_loc = plane.current_loc;
+        plane.set_guided_WP();
+    } else {
+        pos_control->set_desired_velocity(guided_vel_target_cms);
+    }
+
+    float ekfGndSpdLimit, ekfNavVelGainScaler;    
+    ahrs.getEkfControlLimits(ekfGndSpdLimit, ekfNavVelGainScaler);
+    
+    // call velocity controller which includes z axis controller
+    pos_control->update_vel_controller_xyz(ekfNavVelGainScaler);
+
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(pos_control->get_roll(), pos_control->get_pitch(), guided_desired_yaw_rate_cds);
+}
+
+void QuadPlane::set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw, bool log_request)
+{
+    // check we are in velocity control mode
+    if (!in_guided_velocity()) {
+        vel_control_start();
+    }
+
+    // set yaw state
+    guided_desired_yaw_rate_cds = yaw_rate_cds;
+    guided_desired_yaw_rate_cds += get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds();
+
+    // record velocity target
+    guided_vel_target_cms = velocity;
+    vel_update_time_ms = millis();
+}
+
+void QuadPlane::vel_control_start(void)
+{
+    // set guided_mode to velocity controller
+    _in_guided_velocity = true;
+
+    // initialise horizontal speed, acceleration
+    pos_control->set_speed_xy(wp_nav->get_speed_xy());
+    pos_control->set_accel_xy(wp_nav->get_wp_acceleration());
+
+    // initialize vertical speeds and acceleration
+    pos_control->set_speed_z(-pilot_velocity_z_max, pilot_velocity_z_max);
+    pos_control->set_accel_z(pilot_accel_z);
+
+    // initialise velocity controller
+    pos_control->init_vel_controller_xyz();
+}
+
+void QuadPlane::set_in_guided_velocity(void)
+{
+    _in_guided_velocity = true;
+}
+
+void QuadPlane::unset_in_guided_velocity(void)
+{
+    _in_guided_velocity = false;
 }

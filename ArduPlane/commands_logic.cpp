@@ -110,6 +110,10 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
 
     // Do commands
 
+    case MAV_CMD_NAV_GUIDED_ENABLE:
+        do_nav_guided_enable(cmd);
+        break;
+
     case MAV_CMD_DO_CHANGE_SPEED:
         do_change_speed(cmd);
         break;
@@ -325,6 +329,9 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
         // assume parachute was released successfully
         return true;
 #endif
+
+    case MAV_CMD_NAV_GUIDED_ENABLE:
+        return verify_guided_enable(cmd);
         
     // do commands (always return true)
     case MAV_CMD_DO_CHANGE_SPEED:
@@ -1084,4 +1091,33 @@ bool Plane::verify_loiter_heading(bool init)
         return true;
     }
     return false;
+}
+
+void Plane::do_nav_guided_enable(const AP_Mission::Mission_Command& cmd) 
+{
+    if (cmd.p1 > 0) {
+        nav_guided_start();
+    }
+}
+
+bool Plane::verify_guided_enable(const AP_Mission::Mission_Command& cmd)
+{
+    if (cmd.p1 == 0) {
+        return true;
+    }
+    // point to a method for checking time
+    return false;
+}
+
+void Plane::nav_guided_start(void)
+{
+    if (quadplane.in_vtol_auto()) {
+        quadplane.set_in_guided_velocity();
+        auto_state.vtol_loiter = true;
+    }
+}
+
+void Plane::set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw, bool log_request)
+{
+    quadplane.set_velocity(velocity, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
 }

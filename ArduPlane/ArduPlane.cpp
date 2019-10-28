@@ -318,6 +318,19 @@ void Plane::one_second_loop()
     // indicates that the sensor or subsystem is present but not
     // functioning correctly
     update_sensor_status_flags();
+
+    // DEBUG
+    if (quadplane.guided_mode_enabled() && auto_state.vtol_loiter) {
+        gcs().send_text(MAV_SEVERITY_INFO,"in vtol auto o guided");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO,"NO VTOL AUTO O GUIDED");
+    }    
+
+    if (quadplane.in_guided_velocity()) {
+        gcs().send_text(MAV_SEVERITY_INFO,"     guided velocity");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO,"     NO guided velocity");
+    }  
 }
 
 void Plane::compass_save()

@@ -1415,21 +1415,54 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
         mavlink_set_position_target_local_ned_t packet;
         mavlink_msg_set_position_target_local_ned_decode(msg, &packet);
 
-        // exit if vehicle is not in Guided mode
-        if (plane.control_mode != GUIDED) {
+        // exit if vehicle is not in Guided or Auto
+        if (!plane.quadplane.guided_mode_enabled() && !plane.auto_state.vtol_loiter) {
+            gcs().send_text(MAV_SEVERITY_INFO,"         no acepto mensaje");
             break;
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO,"         ACEPTO MENSAJE :)");
         }
 
         // only local moves for now
-        if (packet.coordinate_frame != MAV_FRAME_LOCAL_OFFSET_NED) {
+        if (packet.coordinate_frame != MAV_FRAME_BODY_NED) {
+            gcs().send_text(MAV_SEVERITY_INFO,"         no mav_frame_body_ned");
             break;
         }
 
-        // just do altitude for now
-        plane.next_WP_loc.alt += -packet.z*100.0;
-        gcs().send_text(MAV_SEVERITY_INFO, "Change alt to %.1f",
-                        (double)((plane.next_WP_loc.alt - plane.home.alt)*0.01));
-        
+        //bool pos_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_POS_IGNORE;
+        bool vel_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE;
+        //bool acc_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_ACC_IGNORE;
+        bool yaw_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE;
+        bool yaw_rate_ignore = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE;
+
+        // prepare velocity
+        Vector3f vel_vector;
+        if (!vel_ignore) {
+            // convert to cm
+            vel_vector = Vector3f(packet.vx * 100.0f, packet.vy * 100.0f, -packet.vz * 100.0f);
+            // rotate to body-frame if necessary
+            if (packet.coordinate_frame == MAV_FRAME_BODY_NED) {
+                plane.rotate_body_frame_to_NE(vel_vector.x, vel_vector.y);
+            }
+        }
+
+        // prepare yaw
+        float yaw_cd = 0.0f;
+        bool yaw_relative = false;
+        float yaw_rate_cds = 0.0f;
+        if (!yaw_ignore) {
+            yaw_cd = ToDeg(packet.yaw) * 100.0f;
+            yaw_relative = packet.coordinate_frame == MAV_FRAME_BODY_NED;
+        }
+        if (!yaw_rate_ignore) {
+            yaw_rate_cds = ToDeg(packet.yaw_rate) * 100.0f;
+        }
+
+        // send request
+        gcs().send_text(MAV_SEVERITY_INFO, "vel_vector.x %.1f vel_vector.y %.1f vel_vector.z %.1f ", (double)packet.vx, (double)packet.vy, (double)packet.vz);
+
+        plane.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
+
         break;
     }
 

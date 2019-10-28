@@ -852,6 +852,8 @@ private:
     bool verify_altitude_wait(const AP_Mission::Mission_Command &cmd);
     bool verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd);
     bool verify_vtol_land(const AP_Mission::Mission_Command &cmd);
+    bool verify_guided_enable(const AP_Mission::Mission_Command &cmd);
+    void set_velocity(const Vector3f& velocity, bool use_yaw = false, float yaw_cd = 0.0, bool use_yaw_rate = false, float yaw_rate_cds = 0.0, bool yaw_relative = false, bool log_request = true);
     void do_loiter_at_location();
     bool verify_loiter_heading(bool init);
     void exit_mission_callback();
@@ -1018,6 +1020,9 @@ private:
     void do_set_home(const AP_Mission::Mission_Command& cmd);
     void do_digicam_configure(const AP_Mission::Mission_Command& cmd);
     void do_digicam_control(const AP_Mission::Mission_Command& cmd);
+    void do_nav_guided_enable(const AP_Mission::Mission_Command& cmd);
+    void nav_guided_start(void);
+    void rotate_body_frame_to_NE(float &x, float &y);
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     void notify_flight_mode(enum FlightMode mode);
