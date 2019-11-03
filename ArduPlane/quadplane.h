@@ -115,11 +115,8 @@ public:
     // user initiated takeoff for guided mode
     bool do_user_takeoff(float takeoff_altitude);
 
-    void set_in_guided_velocity(void);
-
-    void unset_in_guided_velocity(void);
-
     bool in_guided_velocity(void) { return _in_guided_velocity; }
+    bool in_guided_mode(void) { return _in_guided_mode; }
     
     struct PACKED log_QControl_Tuning {
         LOG_PACKET_HEADER;
@@ -438,7 +435,8 @@ private:
     uint32_t vel_update_time_ms;
 
     // are we in guided velocity?
-    bool _in_guided_velocity:1;
+    bool _in_guided_mode: 1;
+    bool _in_guided_velocity: 1;
 
     // velocity target (used by velocity controller and posvel controller)
     Vector3f guided_vel_target_cms;      

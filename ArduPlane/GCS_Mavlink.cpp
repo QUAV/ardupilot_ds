@@ -1416,10 +1416,12 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
         mavlink_msg_set_position_target_local_ned_decode(msg, &packet);
 
         // exit if vehicle is not in Guided or Auto
-        if (!plane.quadplane.guided_mode_enabled() && !plane.auto_state.vtol_loiter) {
+        if (!plane.quadplane.guided_mode_enabled() || !plane.auto_state.vtol_mode || !plane.quadplane.in_guided_mode()) {
             gcs().send_text(MAV_SEVERITY_INFO,"         no acepto mensaje");
             break;
         } 
+
+
 
         bool vel_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE;
         bool yaw_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE;

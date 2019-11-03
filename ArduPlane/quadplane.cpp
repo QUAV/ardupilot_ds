@@ -2495,6 +2495,8 @@ void QuadPlane::guided_start(void)
     poscontrol.speed_scale = 0;
     guided_takeoff = false;
     setup_target_position();
+    _in_guided_mode = true;
+    plane.auto_state.vtol_mode = true;
     poscontrol.slow_descent = (plane.current_loc.alt > plane.next_WP_loc.alt);
 }
 
@@ -2781,14 +2783,4 @@ void QuadPlane::vel_control_start(void)
 
     // initialise velocity controller
     pos_control->init_vel_controller_xyz();
-}
-
-void QuadPlane::set_in_guided_velocity(void)
-{
-    _in_guided_velocity = true;
-}
-
-void QuadPlane::unset_in_guided_velocity(void)
-{
-    _in_guided_velocity = false;
 }

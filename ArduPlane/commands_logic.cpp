@@ -114,6 +114,10 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         do_nav_guided_enable(cmd);
         break;
 
+    case MAV_CMD_DO_GUIDED_LIMITS:                      // 220  accept guided mode limits
+        do_guided_limits(cmd);
+        break;
+
     case MAV_CMD_DO_CHANGE_SPEED:
         do_change_speed(cmd);
         break;
@@ -353,6 +357,7 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
     case MAV_CMD_DO_VTOL_TRANSITION:
     case MAV_CMD_DO_ENGINE_CONTROL:
     case MAV_CMD_DO_GRIPPER:
+    case MAV_CMD_DO_GUIDED_LIMITS:
         return true;
 
     default:
@@ -1093,6 +1098,23 @@ bool Plane::verify_loiter_heading(bool init)
     return false;
 }
 
+void Plane::do_guided_limits(const AP_Mission::Mission_Command& cmd)
+{
+    guided_limit_set(
+        cmd.p1 * 1000, // convert seconds to ms
+        cmd.content.guided_limits.alt_min * 100.0f,    // convert meters to cm
+        cmd.content.guided_limits.alt_max * 100.0f,    // convert meters to cm
+        cmd.content.guided_limits.horiz_max * 100.0f); // convert meters to cm
+}
+
+void Plane::guided_limit_set(uint32_t timeout_ms, float alt_min_cm, float alt_max_cm, float horiz_max_cm)
+{
+    guided_limit.timeout_ms = timeout_ms;
+    guided_limit.alt_min_cm = alt_min_cm;
+    guided_limit.alt_max_cm = alt_max_cm;
+    guided_limit.horiz_max_cm = horiz_max_cm;
+}
+
 void Plane::do_nav_guided_enable(const AP_Mission::Mission_Command& cmd) 
 {
     if (cmd.p1 > 0) {
@@ -1100,24 +1122,65 @@ void Plane::do_nav_guided_enable(const AP_Mission::Mission_Command& cmd)
     }
 }
 
+void Plane::limit_init_time_and_pos(void)
+{
+    // initialise start time
+    guided_limit.start_time = AP_HAL::millis();
+
+    // initialise start position from current position
+    guided_limit.start_pos = quadplane.inertial_nav.get_position();
+}
+
 bool Plane::verify_guided_enable(const AP_Mission::Mission_Command& cmd)
 {
     if (cmd.p1 == 0) {
         return true;
     }
-    // point to a method for checking time
-    return false;
+    return guided_limit_check();
 }
 
 void Plane::nav_guided_start(void)
 {
     if (quadplane.in_vtol_auto()) {
-        quadplane.set_in_guided_velocity();
-        auto_state.vtol_loiter = true;
+        quadplane._in_guided_mode = true;
+        quadplane.guided_start();
     }
+    limit_init_time_and_pos();
 }
 
 void Plane::set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw, bool log_request)
 {
     quadplane.set_velocity(velocity, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
+}
+
+bool Plane::guided_limit_check()
+{
+    // check if we have passed the timeout
+    if ((guided_limit.timeout_ms > 0) && (millis() - guided_limit.start_time >= guided_limit.timeout_ms)) {
+        return true;
+    }
+
+    // get current location
+    const Vector3f& curr_pos = quadplane.inertial_nav.get_position();
+
+    // check if we have gone below min alt
+    if (!is_zero(guided_limit.alt_min_cm) && (curr_pos.z < guided_limit.alt_min_cm)) {
+        return true;
+    }
+
+    // check if we have gone above max alt
+    if (!is_zero(guided_limit.alt_max_cm) && (curr_pos.z > guided_limit.alt_max_cm)) {
+        return true;
+    }
+
+    // check if we have gone beyond horizontal limit
+    if (guided_limit.horiz_max_cm > 0.0f) {
+        float horiz_move = get_horizontal_distance_cm(guided_limit.start_pos, curr_pos);
+        if (horiz_move > guided_limit.horiz_max_cm) {
+            return true;
+        }
+    }
+
+    // if we got this far we must be within limits
+    return false;
 }

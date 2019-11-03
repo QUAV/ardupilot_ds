@@ -320,17 +320,8 @@ void Plane::one_second_loop()
     update_sensor_status_flags();
 
     // DEBUG
-    if (quadplane.guided_mode_enabled() && auto_state.vtol_loiter) {
-        gcs().send_text(MAV_SEVERITY_INFO,"in vtol auto o guided");
-    } else {
-        gcs().send_text(MAV_SEVERITY_INFO,"NO VTOL AUTO O GUIDED");
-    }    
 
-    if (quadplane.in_guided_velocity()) {
-        gcs().send_text(MAV_SEVERITY_INFO,"     guided velocity");
-    } else {
-        gcs().send_text(MAV_SEVERITY_INFO,"     NO guided velocity");
-    }  
+       // gcs().send_text(MAV_SEVERITY_INFO,"                     guided mode enabled true");
 }
 
 void Plane::compass_save()

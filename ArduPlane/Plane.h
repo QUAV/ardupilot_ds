@@ -522,6 +522,26 @@ private:
         bool vtol_loiter:1;
     } auto_state;
 
+    struct Guided_Limit {
+        // timeout (in seconds) from the time that guided is invoked
+        uint32_t timeout_ms; 
+
+        // lower altitude limit in cm above home (0 = no limit)
+        float alt_min_cm; 
+
+        // upper altitude limit in cm above home (0 = no limit)
+        float alt_max_cm; 
+
+        // horizontal position limit in cm from where guided mode was initiated (0 = no limit)
+        float horiz_max_cm;
+
+        // system time in milliseconds that control was handed to the external computer
+        uint32_t start_time;
+
+        // start position as a distance from home in cm.  used for checking horiz_max limit
+        Vector3f start_pos; 
+    } guided_limit;
+
     struct {
         // roll pitch yaw commanded from external controller in centidegrees
         Vector3l forced_rpy_cd;
@@ -852,7 +872,6 @@ private:
     bool verify_altitude_wait(const AP_Mission::Mission_Command &cmd);
     bool verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd);
     bool verify_vtol_land(const AP_Mission::Mission_Command &cmd);
-    bool verify_guided_enable(const AP_Mission::Mission_Command &cmd);
     void set_velocity(const Vector3f& velocity, bool use_yaw = false, float yaw_cd = 0.0, bool use_yaw_rate = false, float yaw_rate_cds = 0.0, bool yaw_relative = false, bool log_request = true);
     void do_loiter_at_location();
     bool verify_loiter_heading(bool init);
@@ -1022,6 +1041,11 @@ private:
     void do_digicam_control(const AP_Mission::Mission_Command& cmd);
     void do_nav_guided_enable(const AP_Mission::Mission_Command& cmd);
     void nav_guided_start(void);
+    void guided_limit_set(uint32_t timeout_ms, float alt_min_cm, float alt_max_cm, float horiz_max_cm);
+    void do_guided_limits(const AP_Mission::Mission_Command& cmd);
+    bool verify_guided_enable(const AP_Mission::Mission_Command &cmd);
+    void limit_init_time_and_pos(void);
+    bool guided_limit_check(void);
     void rotate_body_frame_to_NE(float &x, float &y);
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
