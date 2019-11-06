@@ -2491,7 +2491,7 @@ float QuadPlane::get_weathervane_yaw_rate_cds(void)
  */
 void QuadPlane::guided_start(void)
 {
-    poscontrol.state = QPOS_POSITION1;
+    poscontrol.state = QPOS_POSITION2;
     poscontrol.speed_scale = 0;
     guided_takeoff = false;
     setup_target_position();
@@ -2728,12 +2728,12 @@ bool QuadPlane::in_vtol_land_descent(void) const
 void QuadPlane::vel_control_run(void)
 {
     check_attitude_relax();
-
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
     // set velocity to zero and stop rotating if no updates received for 3 seconds. Also set guided target wp to current loc
     uint32_t tnow = millis();
+
     if (tnow - vel_update_time_ms > GUIDED_POSVEL_TIMEOUT_MS) {
         pos_control->set_desired_velocity(Vector3f(0.0f, 0.0f, 0.0f));
         guided_desired_yaw_rate_cds = 0.0f;
@@ -2744,13 +2744,20 @@ void QuadPlane::vel_control_run(void)
         pos_control->set_desired_velocity(guided_vel_target_cms);
     }
 
+    if (should_relax()) {
+        pos_control->set_limit_accel_xy();
+    }
+
     float ekfGndSpdLimit, ekfNavVelGainScaler;    
     ahrs.getEkfControlLimits(ekfGndSpdLimit, ekfNavVelGainScaler);
     
     // call velocity controller which includes z axis controller
     pos_control->update_vel_controller_xyz(ekfNavVelGainScaler);
-
+    // feed attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(pos_control->get_roll(), pos_control->get_pitch(), guided_desired_yaw_rate_cds);
+
+    // check if landed, may be dangeorus if the aircraft keeps stabilizing once it has touched down.
+    verify_vtol_land();
 }
 
 void QuadPlane::set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw, bool log_request)
