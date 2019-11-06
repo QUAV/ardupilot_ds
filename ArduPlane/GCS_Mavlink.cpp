@@ -1417,11 +1417,8 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
 
         // exit if vehicle is not in Guided or Auto
         if (!plane.quadplane.guided_mode_enabled() || !plane.auto_state.vtol_mode || !plane.quadplane.in_guided_mode()) {
-            gcs().send_text(MAV_SEVERITY_INFO,"         no acepto mensaje");
             break;
         } 
-
-
 
         bool vel_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE;
         bool yaw_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE;
@@ -1451,8 +1448,6 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
         }
 
         // send request
-        gcs().send_text(MAV_SEVERITY_INFO, " %.1f      %.1f       %.1f ", (double)packet.vx, (double)packet.vy, (double)packet.vz);
-
         plane.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
 
         break;

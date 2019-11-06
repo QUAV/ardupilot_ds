@@ -297,6 +297,9 @@ void Plane::set_mode(enum FlightMode mode, mode_reason_t reason)
     crash_state.is_crashed = false;
     crash_state.impact_detected = false;
 
+    // guided mode flag to false
+    quadplane._in_guided_mode = false;
+
     // reset external attitude guidance
     guided_state.last_forced_rpy_ms.zero();
     guided_state.last_forced_throttle_ms = 0;

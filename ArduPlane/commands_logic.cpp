@@ -1134,9 +1134,14 @@ void Plane::limit_init_time_and_pos(void)
 bool Plane::verify_guided_enable(const AP_Mission::Mission_Command& cmd)
 {
     if (cmd.p1 == 0) {
+        quadplane._in_guided_mode = false;
         return true;
     }
-    return guided_limit_check();
+    if (guided_limit_check()) {
+        quadplane._in_guided_mode = false;
+        return true;
+    }
+    return false;
 }
 
 void Plane::nav_guided_start(void)

@@ -1656,7 +1656,7 @@ bool QuadPlane::init_mode(void)
         init_qrtl();
         break;
     case GUIDED:
-        guided_takeoff = false;
+        guided_start();
         break;
     default:
         break;
@@ -2727,16 +2727,17 @@ bool QuadPlane::in_vtol_land_descent(void) const
 
 void QuadPlane::vel_control_run(void)
 {
+    check_attitude_relax();
+
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
-    // set velocity to zero and stop rotating if no updates received for 3 seconds
+    // set velocity to zero and stop rotating if no updates received for 3 seconds. Also set guided target wp to current loc
     uint32_t tnow = millis();
     if (tnow - vel_update_time_ms > GUIDED_POSVEL_TIMEOUT_MS) {
         pos_control->set_desired_velocity(Vector3f(0.0f, 0.0f, 0.0f));
         guided_desired_yaw_rate_cds = 0.0f;
         _in_guided_velocity = false;
-        // avoid guided to come to initial pos
         plane.guided_WP_loc = plane.current_loc;
         plane.set_guided_WP();
     } else {
@@ -2761,7 +2762,7 @@ void QuadPlane::set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_c
 
     // set yaw state
     guided_desired_yaw_rate_cds = yaw_rate_cds;
-    guided_desired_yaw_rate_cds += get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds();
+    guided_desired_yaw_rate_cds += get_weathervane_yaw_rate_cds();
 
     // record velocity target
     guided_vel_target_cms = velocity;
