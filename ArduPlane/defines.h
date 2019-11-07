@@ -50,7 +50,7 @@ enum FlightMode {
     CIRCLE        = 1,
     STABILIZE     = 2,
     TRAINING      = 3,
-    ACRO          = 4,
+    GUIDED        = 4,
     FLY_BY_WIRE_A = 5,
     FLY_BY_WIRE_B = 6,
     CRUISE        = 7,
@@ -59,7 +59,7 @@ enum FlightMode {
     RTL           = 11,
     LOITER        = 12,
     AVOID_ADSB    = 14,
-    GUIDED        = 15,
+    ACRO          = 15,
     INITIALISING  = 16,
     QSTABILIZE    = 17,
     QHOVER        = 18,
@@ -197,3 +197,11 @@ enum {
     USE_REVERSE_THRUST_FBWB                     = (1<<9),
     USE_REVERSE_THRUST_GUIDED                   = (1<<10),
 };
+
+// for mavlink SET_POSITION_TARGET messages
+#define MAVLINK_SET_POS_TYPE_MASK_POS_IGNORE      ((1<<0) | (1<<1) | (1<<2))
+#define MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE      ((1<<3) | (1<<4) | (1<<5))
+#define MAVLINK_SET_POS_TYPE_MASK_ACC_IGNORE      ((1<<6) | (1<<7) | (1<<8))
+#define MAVLINK_SET_POS_TYPE_MASK_FORCE           (1<<9)
+#define MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE      (1<<10)
+#define MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE (1<<11)
