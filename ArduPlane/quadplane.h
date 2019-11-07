@@ -35,6 +35,9 @@ public:
     void setup_target_position(void);
     void takeoff_controller(void);
     void waypoint_controller(void);
+    void vel_control_run(void);
+    void set_velocity(const Vector3f& velocity, bool use_yaw = false, float yaw_cd = 0.0, bool use_yaw_rate = false, float yaw_rate_cds = 0.0, bool yaw_relative = false, bool log_request = true);
+    void vel_control_start(void);
 
     void update_throttle_thr_mix(void);
     
@@ -111,6 +114,9 @@ public:
     
     // user initiated takeoff for guided mode
     bool do_user_takeoff(float takeoff_altitude);
+
+    bool in_guided_velocity(void) { return _in_guided_velocity; }
+    bool in_guided_mode(void) { return _in_guided_mode; }
     
     struct PACKED log_QControl_Tuning {
         LOG_PACKET_HEADER;
@@ -424,7 +430,20 @@ private:
 
     // time when we were last in a vtol control mode
     uint32_t last_vtol_mode_ms;
-    
+
+    // system time of last target update to velocity controller
+    uint32_t vel_update_time_ms;
+
+    // are we in guided velocity?
+    bool _in_guided_mode: 1;
+    bool _in_guided_velocity: 1;
+
+    // velocity target (used by velocity controller)
+    Vector3f guided_vel_target_cms;      
+
+    // desired yaw rate target (used by velocity controller)
+    float guided_desired_yaw_rate_cds;
+
     void tiltrotor_slew(float tilt);
     void tiltrotor_binary_slew(bool forward);
     void tiltrotor_update(void);
