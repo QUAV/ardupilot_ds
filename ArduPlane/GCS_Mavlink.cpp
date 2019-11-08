@@ -599,6 +599,15 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK, streamRates[9],  5),
+
+    // @Param: LOLAS
+    // @DisplayName: LOLAS ENABLE
+    // @Description: LOLAS ENABLE
+    // @Units: 1 0
+    // @Range: 0 1
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("LOLAS",   10, GCS_MAVLINK, lolas,  0),
     AP_GROUPEND
 };
 
