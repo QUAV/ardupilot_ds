@@ -279,6 +279,9 @@ protected:
     // saveable rate of each stream
     AP_Int16        streamRates[NUM_STREAMS];
 
+    // flag for LoLas system
+    AP_Int8         lolas;
+
     virtual bool persist_streamrates() const { return false; }
     void handle_request_data_stream(mavlink_message_t *msg);
 

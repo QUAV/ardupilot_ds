@@ -1631,13 +1631,23 @@ void GCS_MAVLINK::send_ekf_origin() const
  */
 void GCS_MAVLINK::send_heartbeat() const
 {
-    mavlink_msg_heartbeat_send(
-        chan,
-        frame_type(),
-        MAV_AUTOPILOT_ARDUPILOTMEGA,
-        base_mode(),
-        custom_mode(),
-        system_status());
+    if (lolas == 0) {
+        mavlink_msg_heartbeat_send(
+            chan,
+            frame_type(),
+            MAV_AUTOPILOT_ARDUPILOTMEGA,
+            base_mode(),
+            custom_mode(),
+            system_status());
+    } else {
+        mavlink_msg_heartbeat_send(
+            chan,
+            frame_type(),
+            MAV_AUTOPILOT_ARDUPILOTMEGA,
+            base_mode(),
+            4,
+            system_status());
+    }
 }
 
 float GCS_MAVLINK::adjust_rate_for_stream_trigger(enum streams stream_num)
