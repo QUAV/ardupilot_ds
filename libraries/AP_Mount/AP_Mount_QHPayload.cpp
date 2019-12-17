@@ -64,20 +64,39 @@ void AP_Mount_QHPayload::PL_check_rc()
     }
 
     // Set zoom function
-    rc_val = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
+    int16_t rc_zoom = RC_Channels::rc_channel(_state._Zoom_ch-1)->get_control_in();
 
-    if ( rc_val > _last_zoom_rc+5 || rc_val < _last_zoom_rc-5 ){
+    /*if ((rc_zoom > (_last_zoom_rc + 3)) || (rc_zoom < (_last_zoom_rc - 3))) {
 
-        _last_zoom_rc = rc_val;
+        _last_zoom_rc = rc_zoom;
         // adjust gain for tracker according zoom
-        _kp = ((_state._kpmax-_state._kpmin)*0.001*(rc_val))+_state._kpmin;
+        _kp = ((_state._kpmax - _state._kpmin) * 0.001f * (float)rc_zoom) + _state._kpmin;
         
         // adjust velocity for manual pointing according zoom
-        _frontend._joystick_speed = ((_state._Speed_max-_state._Speed_min)*0.001*(rc_val))+_state._Speed_min;
+        _frontend._joystick_speed = ((_state._Speed_max - _state._Speed_min) * 0.001f * (float)rc_zoom) + _state._Speed_min;
         
-        _EOzoom = (1000-rc_val)*16.384;
+        _EOzoom = (1000-rc_zoom)*16.384;
 
-        // gcs().send_text(MAV_SEVERITY_INFO, "EOzoom: %5.3f", (double)_EOzoom);
+        PL_set_EOzoom();
+    }*/
+
+
+    if ((rc_zoom > (_last_zoom_rc + 3)) || (rc_zoom < (_last_zoom_rc - 3))) {
+
+        _last_zoom_rc = rc_zoom;
+
+        int zoom = rc_zoom;	
+        if (zoom < -3000) zoom = -3000;
+        if (zoom > 3000) zoom = 3000;
+        float fzoom = (1.0f/6000.0f) * (float)(zoom + 3000);
+
+        _kp = ((_state._kpmax - _state._kpmin) * (1.0f - fzoom)) + _state._kpmin;
+        
+        _frontend._joystick_speed = ((_state._Speed_max - _state._Speed_min) * (1.0f - fzoom)) + _state._Speed_min;
+        
+        _EOzoom = (int)(fzoom * 16383.0f);
+
+        //gcs().send_text(MAV_SEVERITY_INFO, "RCVal %d EOzoom: %d", rc_zoom, _EOzoom);
 
         PL_set_EOzoom();
     }
